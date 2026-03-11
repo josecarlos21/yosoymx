@@ -3,10 +3,10 @@ name: Deploy to Cloudflare Pages
 on:
   push:
     branches:
-      - main
+      - master
   pull_request:
     branches:
-      - main
+      - master
 
 jobs:
   build:
@@ -62,12 +62,12 @@ jobs:
       - name: Build app
         run: npm run build
 
-      - name: Run lint (main branch validation)
+      - name: Run lint (master branch validation)
         if: github.event_name == 'push'
         run: npm run lint
 
-      - name: Sync D1 schema (main branch)
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.CLOUDFLARE_D1_DATABASE_NAME != ''
+      - name: Sync D1 schema (master branch)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/master' && vars.CLOUDFLARE_D1_DATABASE_NAME != ''
         env:
           CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
@@ -79,7 +79,7 @@ jobs:
             --file=database/community.sql
 
       - name: Publish to Cloudflare Pages
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CF_API_TOKEN }}
@@ -87,4 +87,4 @@ jobs:
           command: >
             pages deploy dist
             --project-name=${{ vars.CLOUDFLARE_PROJECT_NAME || 'yosoymx' }}
-            --branch=main
+            --branch=master
