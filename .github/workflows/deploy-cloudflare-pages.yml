@@ -34,7 +34,8 @@ jobs:
       - name: Validate deployment contract
         run: |
           if [ -z "$D1_DATABASE_ID" ]; then
-            echo "::warning title=Falta D1_DATABASE_ID::La variable D1_DATABASE_ID no está definida. Se saltará la sincronización de base de datos."
+            echo "Falta la variable D1_DATABASE_ID en GitHub Variables."
+            exit 1
           fi
           if [ ! -f package-lock.json ]; then
             echo "No existe package-lock.json; el pipeline usa npm ci y requiere lockfile npm."
@@ -50,14 +51,20 @@ jobs:
             exit 1
           fi
           if [ ! -f functions/api/admin/editions.ts ]; then
-            echo "::warning title=Falta API Admin::Falta la ruta de API /api/admin/editions."
+            echo "Falta la ruta de API /api/admin/editions."
+            exit 1
+          fi
+          if ! grep -q "admin_editions" database/community.sql; then
+            echo "El esquema D1 no incluye tabla admin_editions."
+            exit 1
           fi
 
       - name: Build app
         run: npm run build
 
-      - name: Skip lint for emergency deploy
-        run: echo "Linting skipped per user request for rapid deployment."
+      - name: Run lint (master branch validation)
+        if: github.event_name == 'push'
+        run: npm run lint
 
       - name: Sync D1 schema (master branch)
         if: github.event_name == 'push' && github.ref == 'refs/heads/master' && vars.CLOUDFLARE_D1_DATABASE_NAME != ''
