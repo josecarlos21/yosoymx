@@ -1,0 +1,721 @@
+import React from "react";
+import { motion } from "framer-motion";
+import {
+  AlertTriangle,
+  ArrowRight,
+  AudioWaveform,
+  BookOpenText,
+  Building2,
+  CheckCircle2,
+  ChevronRight,
+  Clock3,
+  FileText,
+  Gavel,
+  HeartPulse,
+  Home,
+  MapPin,
+  MessageSquareWarning,
+  Scale,
+  ScrollText,
+  ShieldAlert,
+  Siren,
+  Waves,
+} from "lucide-react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+
+const casosChina = [
+  {
+    ciudad: "Guangzhou",
+    año: "2021–2024",
+    titulo: "Caso judicial típico",
+    texto:
+      "Se documentó uso deliberado del dispositivo, constatación in situ y mediación para frenar la escalada. La lección: el problema no es folclor raro, sino hostigamiento verificable.",
+  },
+  {
+    ciudad: "Shanghai",
+    año: "2016–2021",
+    titulo: "Daño expandido a un edificio",
+    texto:
+      "Las coberturas muestran cómo una represalia diseñada para una vivienda termina afectando a muchas más. La estructura entera se vuelve el medio del ataque.",
+  },
+  {
+    ciudad: "Changsha",
+    año: "2024",
+    titulo: "Escalada a violencia física",
+    texto:
+      "Cuando la vía institucional falla, el conflicto puede mutar de ruido y vibración a agresión directa. El patrón importa más que el gadget infernal.",
+  },
+  {
+    ciudad: "Chengdu",
+    año: "2023–2025",
+    titulo: "Prueba difícil, daño persistente",
+    texto:
+      "Varios reportes describen el cuello de botella clásico: atribuir con certeza el origen cuando la vibración es intermitente, estructural y el acceso al domicilio es limitado.",
+  },
+];
+
+const daños = [
+  "Alteración del sueño",
+  "Ansiedad y estrés sostenido",
+  "Hipervigilancia",
+  "Deterioro de concentración",
+  "Conflicto social crónico",
+  "Riesgo de desplazamiento de vivienda",
+];
+
+const rutasCDMX = [
+  {
+    icon: Siren,
+    titulo: "Urgencia inmediata",
+    texto: "Si el episodio está ocurriendo y existe riesgo, amenaza o agresión, hay que dejar constancia en tiempo real y activar seguridad.",
+    canal: "SSC / 911 / Juzgado Cívico",
+  },
+  {
+    icon: Building2,
+    titulo: "Conflicto condominal",
+    texto: "Cuando hay régimen condominal, la administración y la mediación son útiles para dejar rastro formal y exigir cese.",
+    canal: "Administración / PROSOC",
+  },
+  {
+    icon: Waves,
+    titulo: "Ruido y vibración",
+    texto: "Si proviene de establecimiento o fuente fija, la vía ambiental permite medición técnica y medidas correctivas.",
+    canal: "PAOT / SEDEMA",
+  },
+  {
+    icon: ShieldAlert,
+    titulo: "Hostigamiento o delito",
+    texto: "Si hay amenazas, lesiones, daño o patrón sistemático, no debe tratarse solo como molestia vecinal.",
+    canal: "FGJ CDMX",
+  },
+  {
+    icon: Scale,
+    titulo: "Discriminación o desplazamiento",
+    texto: "Si el objetivo es expulsar, segregar o presionar por perfil económico, origen o condición de arrendatario, entra la ruta de derechos.",
+    canal: "COPRED y queja complementaria",
+  },
+];
+
+const exigencias = [
+  "Reconocer explícitamente el acoso acústico y vibratorio en vivienda.",
+  "Crear protocolo único: SSC + Juez Cívico + PROSOC + PAOT + FGJ + COPRED.",
+  "Permitir medición real de baja frecuencia, impulsividad y vibración estructural.",
+  "Proteger a inquilinos y propietarios ante hostigamiento para desplazamiento.",
+  "Tratar la salud mental como daño real, no como nota marginal burocrática.",
+];
+
+const escrito = `ASUNTO: Denuncia y solicitud de actuación coordinada por acoso vecinal mediante ruido y vibración estructural.
+
+A quien corresponda:
+
+Por medio del presente expongo que en el inmueble ubicado en [DOMICILIO] se presentan episodios reiterados de vibración y/o ruido de carácter impulsivo, de baja frecuencia o retumbante, principalmente en los horarios [HORARIOS], con una duración aproximada de [DURACIÓN].
+
+La afectación se percibe en piso, techo y/o muros, altera el sueño, la concentración y la estabilidad emocional, y además impacta a otras viviendas del entorno. El patrón no corresponde a una molestia aislada, sino a un hostigamiento persistente con efectos reales sobre la salud mental y la permanencia digna en la vivienda.
+
+Solicito:
+1. Admisión de la denuncia y asignación de folio.
+2. Verificación in situ en los horarios de mayor incidencia.
+3. Canalización coordinada según competencia: justicia cívica, vía condominal, vía ambiental, vía penal y/o antidiscriminación.
+4. Medidas preventivas y de no repetición.
+5. Protección contra represalias.
+
+Adjunto:
+- Bitácora de hechos.
+- Audios, videos y testigos.
+- Comunicaciones con administración y autoridades.
+- Cualquier constancia médica o psicológica disponible.
+
+ATENTAMENTE
+[NOMBRE]
+[TELÉFONO / CORREO]
+[FECHA]`;
+
+const fadeUp = {
+  hidden: { opacity: 0, y: 18 },
+  show: { opacity: 1, y: 0 },
+};
+
+const paper = {
+  backgroundColor: "#f4ead7",
+  backgroundImage:
+    "radial-gradient(circle at 20% 20%, rgba(120,95,55,0.08), transparent 26%), radial-gradient(circle at 80% 10%, rgba(120,95,55,0.06), transparent 20%), linear-gradient(180deg, rgba(255,255,255,0.14), rgba(0,0,0,0.02))",
+};
+
+const serif = {
+  fontFamily: 'ui-serif, Georgia, Cambria, "Times New Roman", Times, serif',
+};
+
+function OrnamentalRule() {
+  return (
+    <div className="flex items-center gap-3 py-2 text-[#7b2d12]">
+      <div className="h-px flex-1 bg-[#7b2d12]/35" />
+      <div className="text-[10px] tracking-[0.35em] uppercase">Edición especial</div>
+      <div className="h-px flex-1 bg-[#7b2d12]/35" />
+    </div>
+  );
+}
+
+function SectionKicker({ children }) {
+  return (
+    <div className="inline-flex items-center gap-2 rounded-full border border-[#2f241d]/15 bg-white/60 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-[#7b2d12]">
+      {children}
+    </div>
+  );
+}
+
+function DropCapParagraph({ children }) {
+  const text = String(children);
+  const first = text.charAt(0);
+  const rest = text.slice(1);
+  return (
+    <p className="text-[15px] leading-8 text-[#2f241d]/90 md:text-[17px]" style={serif}>
+      <span className="float-left mr-3 mt-1 text-5xl font-black leading-none text-[#7b2d12] md:text-6xl">{first}</span>
+      {rest}
+    </p>
+  );
+}
+
+function InfoChip({ children }) {
+  return (
+    <div className="rounded-full border border-[#2f241d]/15 bg-white/70 px-3 py-1 text-xs text-[#2f241d]/75">{children}</div>
+  );
+}
+
+export default function MicrositioAcosoVecinal() {
+  return (
+    <div className="min-h-screen bg-[#e9dcc4] text-[#1e1712]" style={serif}>
+      <div className="sticky top-0 z-40 border-b border-[#2f241d]/10 bg-[#efe4cf]/90 backdrop-blur">
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 md:px-6">
+          <div className="min-w-0">
+            <div className="text-[11px] uppercase tracking-[0.32em] text-[#7b2d12]">Edición especial · China / CDMX</div>
+            <div className="truncate text-sm font-semibold">Acoso vecinal por ruido y vibración</div>
+          </div>
+          <div className="hidden items-center gap-2 md:flex">
+            <Button asChild variant="secondary" className="rounded-full border border-[#2f241d]/10 bg-white/80 text-[#2f241d] shadow-none hover:bg-white">
+              <a href="#archivo">Archivo visual</a>
+            </Button>
+            <Button asChild className="rounded-full bg-[#7b2d12] text-[#fff8ef] hover:bg-[#61210d]">
+              <a href="#escrito">Ver escrito</a>
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      <main>
+        <section className="border-b border-[#2f241d]/10" style={paper}>
+          <div className="mx-auto max-w-7xl px-4 py-8 md:px-6 md:py-10">
+            <div className="mb-5 grid gap-3 border-y border-[#2f241d]/15 py-3 text-[11px] uppercase tracking-[0.28em] text-[#2f241d]/70 md:grid-cols-3">
+              <div>Ciudad de México · Hemeroteca contemporánea</div>
+              <div className="text-center">Informe visual y jurídico</div>
+              <div className="text-left md:text-right">Año MMXXVI · Número especial</div>
+            </div>
+
+            <div className="grid gap-8 md:grid-cols-[1.3fr_0.7fr]">
+              <motion.div variants={fadeUp} initial="hidden" animate="show" className="space-y-5">
+                <div className="space-y-3">
+                  <SectionKicker>Portada</SectionKicker>
+                  <h1 className="max-w-5xl text-5xl font-black leading-[0.94] tracking-tight text-[#1f1712] md:text-7xl">
+                    No es “pleito de vecinos”.
+                    <span className="mt-2 block text-[#7b2d12]">Es hostigamiento por ruido y vibración.</span>
+                  </h1>
+                  <p className="max-w-4xl text-lg leading-8 text-[#2f241d]/82 md:text-[22px] md:leading-9">
+                    Este sitio usa una estética de <span className="font-semibold">edición especial</span>: menos estridencia de nota roja, más lectura clara, visual y documental. El objetivo es explicar qué es el fenómeno conocido como <span className="font-semibold">震楼器 / zhènlóuqì</span>, cómo se documenta, qué daño provoca y qué rutas existen en CDMX.
+                  </p>
+                </div>
+
+                <OrnamentalRule />
+
+                <div className="grid gap-4 md:grid-cols-[1.1fr_0.9fr]">
+                  <div className="rounded-[28px] border border-[#2f241d]/12 bg-white/70 p-5 shadow-[0_10px_30px_rgba(60,40,20,0.08)]">
+                    <div className="mb-3 flex flex-wrap gap-2">
+                      <InfoChip>Violencia acústica</InfoChip>
+                      <InfoChip>Salud mental</InfoChip>
+                      <InfoChip>Convivencia y desplazamiento</InfoChip>
+                    </div>
+                    <DropCapParagraph>
+                      Cuando el ruido o la vibración se usan para castigar, intimidar o desgastar a una persona dentro de su vivienda, ya no estamos frente a una simple molestia de convivencia. Estamos frente a una técnica de hostigamiento que rompe sueño, seguridad y permanencia en el hogar.
+                    </DropCapParagraph>
+                  </div>
+
+                  <div className="grid gap-4">
+                    <div className="overflow-hidden rounded-[28px] border border-[#2f241d]/12 bg-[#efe2ca] shadow-[0_10px_30px_rgba(60,40,20,0.08)]">
+                      <img
+                        src="https://society.people.com.cn/mediafile/pic/20231023/4/16866223863776453172.jpg"
+                        alt="Visual de prensa sobre el fenómeno 震楼器"
+                        className="h-60 w-full object-cover sepia-[0.52] contrast-[0.95] saturate-[0.85] md:h-[18.5rem]"
+                      />
+                      <div className="border-t border-[#2f241d]/10 bg-white/70 p-4">
+                        <div className="text-[11px] uppercase tracking-[0.22em] text-[#7b2d12]">Imagen de referencia</div>
+                        <p className="mt-1 text-sm leading-7 text-[#2f241d]/80">
+                          La pieza visual entra como archivo, no como espectáculo: contexto editorial antes que amarillismo con espuma.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+
+              <motion.aside variants={fadeUp} initial="hidden" animate="show" transition={{ delay: 0.05 }} className="space-y-4">
+                <div className="rounded-[28px] border border-[#2f241d]/12 bg-white/75 p-5 shadow-[0_10px_30px_rgba(60,40,20,0.08)]">
+                  <div className="mb-3 text-[11px] font-semibold uppercase tracking-[0.28em] text-[#7b2d12]">Sumario</div>
+                  <div className="space-y-2">
+                    {[
+                      ["#problema", "Qué está pasando realmente"],
+                      ["#mecanica", "Cómo escala el conflicto"],
+                      ["#casos", "China: casos y patrones"],
+                      ["#archivo", "Archivo visual"],
+                      ["#acciones", "Ruta CDMX"],
+                      ["#escrito", "Escrito base"],
+                    ].map(([href, label]) => (
+                      <a key={href} href={href} className="flex items-center justify-between rounded-2xl border border-transparent px-3 py-2 text-sm text-[#2f241d]/82 transition hover:border-[#2f241d]/10 hover:bg-[#f8f2e8]">
+                        <span>{label}</span>
+                        <ArrowRight className="h-4 w-4 text-[#7b2d12]" />
+                      </a>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="rounded-[28px] border border-[#2f241d]/12 bg-[#2b211a] p-5 text-[#f7efe3] shadow-[0_10px_30px_rgba(60,40,20,0.18)]">
+                  <div className="mb-3 flex items-center gap-3">
+                    <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#7b2d12] text-[#fff7ed]">
+                      <AudioWaveform className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <div className="text-sm font-semibold uppercase tracking-[0.18em] text-[#d8b68e]">Mapa del daño</div>
+                      <div className="text-xs text-[#e8d7c4]/70">Lectura rápida, no folleto de oficina.</div>
+                    </div>
+                  </div>
+                  <div className="space-y-3 text-sm">
+                    {[
+                      ["Sueño alterado", "muy alto"],
+                      ["Estrés / ansiedad", "alto"],
+                      ["Conflicto social", "alto"],
+                      ["Riesgo de desplazamiento", "creciente"],
+                    ].map(([label, note], idx) => (
+                      <div key={label}>
+                        <div className="mb-1 flex items-center justify-between text-[#f7efe3]/90">
+                          <span>{label}</span>
+                          <span className="text-[#d8b68e]">{note}</span>
+                        </div>
+                        <div className="h-2 overflow-hidden rounded-full bg-white/10">
+                          <div className="h-full rounded-full bg-[#c65d2d]" style={{ width: `${92 - idx * 7}%` }} />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </motion.aside>
+            </div>
+          </div>
+        </section>
+
+        <section id="problema" className="border-b border-[#2f241d]/10 bg-[#f8f1e6]">
+          <div className="mx-auto max-w-7xl px-4 py-16 md:px-6 md:py-20">
+            <div className="mb-8 max-w-4xl">
+              <SectionKicker>01 · El problema</SectionKicker>
+              <h2 className="mt-3 text-4xl font-black tracking-tight md:text-6xl">Qué está pasando realmente</h2>
+              <p className="mt-4 max-w-3xl text-[15px] leading-8 text-[#2f241d]/78 md:text-lg">
+                La clave es separar una molestia aislada de un patrón de hostigamiento. Este formato editorial sirve justo para eso: ordenar, jerarquizar y volver legible algo que suele presentarse como caos.
+              </p>
+            </div>
+
+            <div className="grid gap-6 md:grid-cols-3">
+              {[
+                {
+                  icon: Home,
+                  title: "La vivienda deja de ser refugio",
+                  text: "El daño más rudo no siempre es el volumen. Es la pérdida de seguridad básica dentro del espacio propio.",
+                },
+                {
+                  icon: HeartPulse,
+                  title: "La salud mental sí entra aquí",
+                  text: "Sueño roto, ansiedad, llanto, irritabilidad e hipervigilancia no son exageración: son efectos esperables.",
+                },
+                {
+                  icon: Gavel,
+                  title: "La ley suele llegar fragmentada",
+                  text: "Una autoridad lo manda al condominio, otra al ruido, otra a la prueba técnica. En ese hueco el acoso prospera como hongo feo.",
+                },
+              ].map((item) => {
+                const Icon = item.icon;
+                return (
+                  <Card key={item.title} className="rounded-[28px] border-[#2f241d]/12 bg-white/80 shadow-[0_10px_30px_rgba(60,40,20,0.06)]">
+                    <CardContent className="p-6">
+                      <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#f1dec3] text-[#7b2d12]">
+                        <Icon className="h-6 w-6" />
+                      </div>
+                      <h3 className="mb-2 text-xl font-black">{item.title}</h3>
+                      <p className="text-sm leading-7 text-[#2f241d]/78">{item.text}</p>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+
+        <section id="mecanica" className="border-b border-[#2f241d]/10" style={paper}>
+          <div className="mx-auto max-w-7xl px-4 py-16 md:px-6 md:py-20">
+            <div className="mb-8 max-w-4xl">
+              <SectionKicker>02 · Mecánica del acoso</SectionKicker>
+              <h2 className="mt-3 text-4xl font-black tracking-tight md:text-6xl">Cómo escala el conflicto</h2>
+              <p className="mt-4 max-w-3xl text-[15px] leading-8 text-[#2f241d]/78 md:text-lg">
+                El patrón suele repetir la misma coreografía miserable: detonante cotidiano, falta de salida institucional, represalia, contra-represalia, desgaste emocional y presión para ceder.
+              </p>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-5">
+              {[
+                "Ruido o conflicto inicial",
+                "Falta de respuesta clara",
+                "Represalia acústica o vibratoria",
+                "Escalada y afectación a terceros",
+                "Desgaste, miedo o desplazamiento",
+              ].map((step, i) => (
+                <motion.div
+                  key={step}
+                  initial={{ opacity: 0, y: 16 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: i * 0.05 }}
+                  className="rounded-[28px] border border-[#2f241d]/12 bg-white/80 p-5 shadow-[0_10px_30px_rgba(60,40,20,0.06)]"
+                >
+                  <div className="mb-4 flex items-center justify-between">
+                    <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#7b2d12] text-sm font-black text-[#fff8ef]">{i + 1}</div>
+                    {i < 4 && <ChevronRight className="hidden h-4 w-4 text-[#7b2d12]/60 md:block" />}
+                  </div>
+                  <p className="text-sm leading-7 text-[#2f241d]/85">{step}</p>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section id="casos" className="border-b border-[#2f241d]/10 bg-[#f7efe3]">
+          <div className="mx-auto max-w-7xl px-4 py-16 md:px-6 md:py-20">
+            <div className="mb-8 max-w-4xl">
+              <SectionKicker>03 · China</SectionKicker>
+              <h2 className="mt-3 text-4xl font-black tracking-tight md:text-6xl">Casos documentados y patrones observados</h2>
+              <p className="mt-4 max-w-3xl text-[15px] leading-8 text-[#2f241d]/78 md:text-lg">
+                La importancia del término <span className="font-semibold">震楼器</span> no está en lo exótico del nombre. Está en que ya existe suficiente casuística para observar uso deliberado, dificultad probatoria y riesgo de escalada.
+              </p>
+            </div>
+
+            <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
+              {casosChina.map((caso) => (
+                <Card key={caso.ciudad + caso.titulo} className="rounded-[28px] border-[#2f241d]/12 bg-white/85 shadow-[0_10px_30px_rgba(60,40,20,0.06)]">
+                  <CardHeader>
+                    <div className="flex items-center justify-between gap-3">
+                      <Badge variant="secondary" className="rounded-full border border-[#2f241d]/10 bg-[#f6ecdd] text-[#7b2d12]">{caso.año}</Badge>
+                      <div className="flex items-center gap-1 text-xs text-[#2f241d]/55"><MapPin className="h-3.5 w-3.5" /> {caso.ciudad}</div>
+                    </div>
+                    <CardTitle className="text-[22px] leading-7">{caso.titulo}</CardTitle>
+                    <CardDescription className="leading-7 text-[#2f241d]/72">{caso.texto}</CardDescription>
+                  </CardHeader>
+                </Card>
+              ))}
+            </div>
+
+            <div className="mt-10 grid gap-6 md:grid-cols-[0.8fr_1.2fr]">
+              <Card className="rounded-[30px] border-[#2f241d]/12 bg-[#2b211a] text-[#f7efe3] shadow-[0_10px_30px_rgba(60,40,20,0.18)]">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-3 text-2xl"><Clock3 className="h-5 w-5 text-[#d8b68e]" /> Lectura rápida de la tendencia</CardTitle>
+                  <CardDescription className="text-[#e8d7c4]/70">Más archivo y contexto, menos histeria visual.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3 text-sm leading-7 text-[#f7efe3]/88">
+                  <div className="rounded-2xl border border-white/10 bg-white/5 p-4">Bloquean términos, reaparecen nombres alternos y vendedores oportunistas.</div>
+                  <div className="rounded-2xl border border-white/10 bg-white/5 p-4">La prueba técnica suele tropezar con acceso limitado, intermitencia y transmisión estructural.</div>
+                  <div className="rounded-2xl border border-white/10 bg-white/5 p-4">Una represalia pensada para “uno” termina afectando a varios departamentos.</div>
+                </CardContent>
+              </Card>
+
+              <div className="rounded-[30px] border border-[#2f241d]/12 bg-white/80 p-6 shadow-[0_10px_30px_rgba(60,40,20,0.06)] md:p-7">
+                <div className="mb-4 flex items-center gap-3 text-[#7b2d12]">
+                  <BookOpenText className="h-5 w-5" />
+                  <div className="text-xs font-semibold uppercase tracking-[0.25em]">Nota editorial</div>
+                </div>
+                <div className="columns-1 gap-8 text-[15px] leading-8 text-[#2f241d]/84 md:columns-2 md:text-[16px]" style={serif}>
+                  <p>
+                    En China, el tratamiento público del fenómeno ya permite ver algo esencial: aunque el dispositivo cambie de forma o de nombre, la lógica subyacente es la misma. Se aprovecha la estructura del edificio como canal de hostigamiento.
+                  </p>
+                  <p>
+                    Cuando la respuesta institucional es lenta, confusa o fragmentada, aparece la tentación de la represalia. Ese es el punto exacto donde el conflicto deja de ser convivencia defectuosa y se vuelve daño sostenido.
+                  </p>
+                  <p>
+                    Por eso esta página no está diseñada como volante escandaloso. Está pensada como lectura editorial: portada, archivo, sumario, piezas cortas y visuales documentales que permitan entender el caso sin abrumar a quien entra.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="archivo" className="border-b border-[#2f241d]/10" style={paper}>
+          <div className="mx-auto max-w-7xl px-4 py-16 md:px-6 md:py-20">
+            <div className="mb-8 max-w-4xl">
+              <SectionKicker>04 · Archivo visual</SectionKicker>
+              <h2 className="mt-3 text-4xl font-black tracking-tight md:text-6xl">Una estética de periódico viejo, pero respirable</h2>
+              <p className="mt-4 max-w-3xl text-[15px] leading-8 text-[#2f241d]/78 md:text-lg">
+                La referencia visual sale de hemerotecas mexicanas y prensa histórica: masthead, serif, columnas, sumarios y tonos papel. Se siente antiguo, pero no empolvado; documental, pero no tieso.
+              </p>
+            </div>
+
+            <div className="grid gap-6 md:grid-cols-3">
+              <figure className="overflow-hidden rounded-[28px] border border-[#2f241d]/12 bg-white/80 shadow-[0_10px_30px_rgba(60,40,20,0.06)]">
+                <img
+                  src="https://society.people.com.cn/mediafile/pic/20231023/4/16866223863776453172.jpg"
+                  alt="Imagen de prensa china sobre el fenómeno zhenlouqi"
+                  className="h-64 w-full object-cover sepia-[0.5] contrast-[0.92]"
+                />
+                <figcaption className="space-y-1 border-t border-[#2f241d]/10 px-5 py-4">
+                  <div className="text-[11px] uppercase tracking-[0.22em] text-[#7b2d12]">Caso / prensa china</div>
+                  <p className="text-sm leading-7 text-[#2f241d]/78">La imagen funciona como documento periodístico, no como póster de pánico.</p>
+                </figcaption>
+              </figure>
+
+              <figure className="overflow-hidden rounded-[28px] border border-[#2f241d]/12 bg-white/80 shadow-[0_10px_30px_rgba(60,40,20,0.06)]">
+                <img
+                  src="https://www.sgbox.com/images/products/enlarged/Ceiling-Thumper.jpg"
+                  alt="Ejemplo comercial de dispositivo tipo ceiling thumper"
+                  className="h-64 w-full object-cover sepia-[0.55] contrast-[0.9]"
+                />
+                <figcaption className="space-y-1 border-t border-[#2f241d]/10 px-5 py-4">
+                  <div className="text-[11px] uppercase tracking-[0.22em] text-[#7b2d12]">Objeto / mercado</div>
+                  <p className="text-sm leading-7 text-[#2f241d]/78">Conviene mostrar el artefacto con distancia analítica, no con glamour de gadget siniestro.</p>
+                </figcaption>
+              </figure>
+
+              <div className="rounded-[28px] border border-[#2f241d]/12 bg-[#2b211a] p-6 text-[#f7efe3] shadow-[0_10px_30px_rgba(60,40,20,0.18)]">
+                <div className="mb-3 text-[11px] font-semibold uppercase tracking-[0.28em] text-[#d8b68e]">Referencias de diseño</div>
+                <h3 className="mb-3 text-2xl font-black">Hemeroteca mexicana, no nota roja</h3>
+                <p className="text-sm leading-8 text-[#f7efe3]/82">
+                  El lenguaje visual toma pistas de colecciones de prensa histórica mexicana: la larga tradición de la <span className="font-semibold">Hemeroteca Nacional</span>, la presencia de títulos como <span className="font-semibold">Gaceta de México</span>, <span className="font-semibold">El Monitor Republicano</span>, <span className="font-semibold">El Ahuizote</span> y <span className="font-semibold">El Mundo Ilustrado</span>, y el archivo del Fondo Reservado.
+                </p>
+                <div className="mt-5 flex flex-wrap gap-2">
+                  <Button asChild variant="secondary" className="rounded-full border border-white/10 bg-white/10 text-[#fff8ef] hover:bg-white/15">
+                    <a href="https://bnm.iib.unam.mx/index.php/hemeroteca-nacional-de-mexico/colecciones/fondo-reservado/74-publicaciones-periodicas-mexicanas-1728-1916" target="_blank" rel="noreferrer">Ver Hemeroteca</a>
+                  </Button>
+                  <Button asChild variant="secondary" className="rounded-full border border-white/10 bg-white/10 text-[#fff8ef] hover:bg-white/15">
+                    <a href="https://bnm.iib.unam.mx/index.php/hemeroteca-nacional-de-mexico/colecciones/fondo-reservado" target="_blank" rel="noreferrer">Fondo reservado</a>
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="border-b border-[#2f241d]/10 bg-[#231a15] text-[#f7efe3]">
+          <div className="mx-auto max-w-7xl px-4 py-16 md:px-6 md:py-20">
+            <div className="mb-8 max-w-4xl">
+              <SectionKicker>05 · Impacto</SectionKicker>
+              <h2 className="mt-3 text-4xl font-black tracking-tight text-[#fff8ef] md:text-6xl">Salud mental: no es una nota al pie</h2>
+              <p className="mt-4 max-w-3xl text-[15px] leading-8 text-[#e8d7c4]/75 md:text-lg">
+                El formato editorial ayuda a algo importante: que una persona quiera seguir leyendo. El contenido sigue siendo duro, pero la lectura no tiene que sentirse como un martillazo adicional.
+              </p>
+            </div>
+
+            <div className="grid gap-6 md:grid-cols-[0.9fr_1.1fr]">
+              <Card className="rounded-[30px] border-white/10 bg-white/5 text-[#fff8ef] shadow-none">
+                <CardHeader>
+                  <CardTitle className="text-2xl">Daños frecuentes</CardTitle>
+                  <CardDescription className="text-[#e8d7c4]/65">Nombrarlos con claridad ya es parte de salir del laberinto.</CardDescription>
+                </CardHeader>
+                <CardContent className="grid gap-3">
+                  {daños.map((daño) => (
+                    <div key={daño} className="flex items-center gap-3 rounded-2xl border border-white/10 bg-black/10 px-4 py-3">
+                      <CheckCircle2 className="h-5 w-5 text-[#d8b68e]" />
+                      <span className="text-sm text-[#f7efe3]/88">{daño}</span>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+
+              <div className="rounded-[30px] border border-white/10 bg-white/5 p-6 shadow-none md:p-7">
+                <div className="mb-4 flex items-center gap-3 text-[#d8b68e]"><MessageSquareWarning className="h-5 w-5" /> <div className="text-xs font-semibold uppercase tracking-[0.25em]">Nota clínica y social</div></div>
+                <div className="space-y-4 text-sm leading-8 text-[#f7efe3]/82 md:text-[15px]">
+                  <p>
+                    El daño no depende únicamente de decibeles. Importan la repetición, la imprevisibilidad, la sensación de invasión del espacio propio y la imposibilidad de controlar el entorno.
+                  </p>
+                  <p>
+                    Cuando el episodio es intermitente, nocturno, impulsivo o vibratorio, el cuerpo no logra anticiparlo ni adaptarse bien. Eso favorece hipervigilancia, fatiga, irritabilidad y deterioro emocional.
+                  </p>
+                  <div className="rounded-3xl border border-[#c65d2d]/30 bg-[#c65d2d]/10 p-5 text-[#fff3ea]">
+                    <div className="mb-2 flex items-center gap-2 font-semibold"><HeartPulse className="h-4 w-4" /> Punto clave</div>
+                    <p className="text-sm leading-7 text-[#fff3ea]/88">
+                      El error más torpe es exigir una reacción impecable a quien lleva semanas o meses sin dormir bien. El impacto psicológico no es adorno narrativo: es parte central del caso.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="acciones" className="border-b border-[#2f241d]/10 bg-[#f8f1e6]">
+          <div className="mx-auto max-w-7xl px-4 py-16 md:px-6 md:py-20">
+            <div className="mb-8 max-w-4xl">
+              <SectionKicker>06 · CDMX</SectionKicker>
+              <h2 className="mt-3 text-4xl font-black tracking-tight md:text-6xl">Ruta integrada de acción</h2>
+              <p className="mt-4 max-w-3xl text-[15px] leading-8 text-[#2f241d]/78 md:text-lg">
+                La salida útil no es una denuncia mágica. Es una combinación de bitácora, rastro documental, canal correcto y una presentación clara que la gente sí quiera leer y compartir.
+              </p>
+            </div>
+
+            <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-5">
+              {rutasCDMX.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <Card key={item.titulo} className="rounded-[28px] border-[#2f241d]/12 bg-white/85 shadow-[0_10px_30px_rgba(60,40,20,0.06)]">
+                    <CardContent className="p-6">
+                      <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#f1dec3] text-[#7b2d12]">
+                        <Icon className="h-6 w-6" />
+                      </div>
+                      <h3 className="mb-2 text-lg font-black">{item.titulo}</h3>
+                      <p className="mb-4 text-sm leading-7 text-[#2f241d]/76">{item.texto}</p>
+                      <Badge variant="secondary" className="rounded-full border border-[#2f241d]/10 bg-[#f8f2e8] text-[#7b2d12]">{item.canal}</Badge>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+
+            <div className="mt-10 grid gap-6 md:grid-cols-[1fr_0.92fr]">
+              <Card className="rounded-[30px] border-[#2f241d]/12 bg-white/85 shadow-[0_10px_30px_rgba(60,40,20,0.06)]">
+                <CardHeader>
+                  <CardTitle className="text-2xl">Check de evidencia mínima</CardTitle>
+                  <CardDescription>Orden antes que pánico. Archivo antes que grito suelto.</CardDescription>
+                </CardHeader>
+                <CardContent className="grid gap-3 text-sm leading-7 text-[#2f241d]/78">
+                  {[
+                    "Bitácora diaria con fecha, hora, duración, intensidad percibida y efecto.",
+                    "Audios o videos con marcas de tiempo y contexto del lugar.",
+                    "Testigos o vecinos afectados por el mismo episodio.",
+                    "Capturas de mensajes, oficios o reportes a administración y autoridades.",
+                    "Constancias médicas o psicológicas si ya existe afectación clínica.",
+                  ].map((x) => (
+                    <div key={x} className="flex items-start gap-3 rounded-2xl bg-[#fbf6ef] p-4">
+                      <CheckCircle2 className="mt-0.5 h-5 w-5 text-[#7b2d12]" />
+                      <span>{x}</span>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+
+              <Card className="rounded-[30px] border-[#2f241d]/12 bg-white/85 shadow-[0_10px_30px_rgba(60,40,20,0.06)]">
+                <CardHeader>
+                  <CardTitle className="text-2xl">Qué exigir a la autoridad</CardTitle>
+                  <CardDescription>Lo concreto siempre le gana al discurso inflado.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {exigencias.map((e) => (
+                    <div key={e} className="flex items-start gap-3 rounded-2xl border border-[#2f241d]/10 p-4 text-sm leading-7 text-[#2f241d]/78">
+                      <ChevronRight className="mt-1 h-4 w-4 text-[#7b2d12]" />
+                      <span>{e}</span>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </section>
+
+        <section id="escrito" className="border-b border-[#2f241d]/10" style={paper}>
+          <div className="mx-auto max-w-7xl px-4 py-16 md:px-6 md:py-20">
+            <div className="mb-8 max-w-4xl">
+              <SectionKicker>07 · Escrito base</SectionKicker>
+              <h2 className="mt-3 text-4xl font-black tracking-tight md:text-6xl">Borrador listo para adaptar</h2>
+              <p className="mt-4 max-w-3xl text-[15px] leading-8 text-[#2f241d]/78 md:text-lg">
+                El escrito se presenta como recorte documental: limpio, legible, sin olor a trámite muerto ni a panfleto incendiario.
+              </p>
+            </div>
+
+            <div className="grid gap-6 md:grid-cols-[0.72fr_1.28fr]">
+              <Card className="rounded-[30px] border-[#2f241d]/12 bg-[#2b211a] text-[#f7efe3] shadow-[0_10px_30px_rgba(60,40,20,0.18)]">
+                <CardContent className="p-6">
+                  <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#7b2d12] text-[#fff8ef]">
+                    <ScrollText className="h-6 w-6" />
+                  </div>
+                  <h3 className="mb-3 text-xl font-black">Cómo usarlo</h3>
+                  <div className="space-y-3 text-sm leading-7 text-[#f7efe3]/82">
+                    <p>1. Cambia domicilio, fechas, horarios y síntomas reales.</p>
+                    <p>2. Adjunta bitácora, clips, testigos y mensajes.</p>
+                    <p>3. Duplica el escrito según autoridad competente.</p>
+                    <p>4. Conserva versión firmada y versión digital.</p>
+                  </div>
+                  <div className="mt-6 flex flex-wrap gap-3">
+                    <Button className="rounded-full bg-[#c65d2d] text-[#fff8ef] hover:bg-[#b34b1c]"><FileText className="mr-2 h-4 w-4" /> Texto base</Button>
+                    <Button variant="secondary" className="rounded-full border border-white/10 bg-white/10 text-[#fff8ef] hover:bg-white/15">Guardar para adaptar</Button>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <div className="rounded-[30px] border border-[#2f241d]/12 bg-white/82 shadow-[0_10px_30px_rgba(60,40,20,0.06)]">
+                <div className="border-b border-[#2f241d]/10 px-6 py-4 text-[11px] uppercase tracking-[0.28em] text-[#7b2d12] md:px-8">Documento base</div>
+                <pre className="overflow-x-auto whitespace-pre-wrap p-6 text-sm leading-8 text-[#2f241d]/86 md:p-8">{escrito}</pre>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="bg-[#f8f1e6]">
+          <div className="mx-auto max-w-7xl px-4 py-16 md:px-6 md:py-20">
+            <div className="mb-8 max-w-4xl">
+              <SectionKicker>08 · Cierre editorial</SectionKicker>
+              <h2 className="mt-3 text-4xl font-black tracking-tight md:text-6xl">Cómo contarlo sin arruinarlo</h2>
+              <p className="mt-4 max-w-3xl text-[15px] leading-8 text-[#2f241d]/78 md:text-lg">
+                Una pieza pública útil necesita jerarquía visual, respiración, verdad y una dosis razonable de dramatismo. No más. Lo demás es espuma decorativa.
+              </p>
+            </div>
+
+            <div className="grid gap-6 md:grid-cols-3">
+              {[
+                {
+                  title: "Portada / edición especial",
+                  text: "Sirve para que la gente se detenga y quiera leer, no solo para asustarla con letras rojas.",
+                },
+                {
+                  title: "Archivo visual",
+                  text: "Mejor documentos, referencias y objetos contextualizados que collage sensacionalista sin aire.",
+                },
+                {
+                  title: "Escrito accionable",
+                  text: "La indignación se vuelve útil cuando termina convertida en texto, evidencia y ruta.",
+                },
+              ].map((item) => (
+                <div key={item.title} className="rounded-[30px] border border-[#2f241d]/12 bg-white/85 p-6 shadow-[0_10px_30px_rgba(60,40,20,0.06)]">
+                  <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#231a15] text-[#fff8ef]"><AlertTriangle className="h-6 w-6" /></div>
+                  <h3 className="mb-2 text-xl font-black">{item.title}</h3>
+                  <p className="text-sm leading-7 text-[#2f241d]/76">{item.text}</p>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-10 rounded-[32px] border border-[#2f241d]/12 bg-white/88 p-6 shadow-[0_10px_30px_rgba(60,40,20,0.06)] md:p-8">
+              <div className="mb-5 flex items-center gap-3 text-[#7b2d12]"><FileText className="h-6 w-6" /> <div><h3 className="text-xl font-black text-[#1f1712]">Frase pública sugerida</h3><p className="text-sm text-[#2f241d]/60">Clara, sobria y compartible.</p></div></div>
+              <blockquote className="rounded-[26px] border-l-4 border-[#7b2d12] bg-[#fbf6ef] p-5 text-xl font-semibold leading-9 text-[#1f1712] md:text-[26px] md:leading-10">
+                El acoso por ruido y vibraciones no es una molestia menor: puede dañar la salud mental, romper la convivencia y empujar a las personas fuera de su vivienda. La ciudad necesita protocolo, medición y respuesta real.
+              </blockquote>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <footer className="border-t border-[#2f241d]/10 bg-[#efe4cf]">
+        <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-10 text-sm text-[#2f241d]/68 md:flex-row md:items-center md:justify-between md:px-6">
+          <div>
+            <div className="font-semibold text-[#1f1712]">Micrositio · Edición especial sobre acoso vecinal por ruido y vibración</div>
+            <div>Base narrativa, visual y documental para explicar la situación completa sin caer en amarillismo flojo.</div>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Badge className="rounded-full border border-[#2f241d]/10 bg-white/70 text-[#2f241d]">China</Badge>
+            <Badge className="rounded-full border border-[#2f241d]/10 bg-white/70 text-[#2f241d]">CDMX</Badge>
+            <Badge className="rounded-full border border-[#2f241d]/10 bg-white/70 text-[#2f241d]">Salud mental</Badge>
+            <Badge className="rounded-full border border-[#2f241d]/10 bg-white/70 text-[#2f241d]">Hemeroteca</Badge>
+          </div>
+        </div>
+      </footer>
+    </div>
+  );
+}
