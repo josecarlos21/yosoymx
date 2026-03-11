@@ -59,6 +59,15 @@ type AdminEditionErrorCode =
 
 const MAX_CACHE_DAYS = 7;
 
+function stripControlCharacters(value: string) {
+  return Array.from(value)
+    .filter((char) => {
+      const code = char.charCodeAt(0);
+      return code === 9 || code === 10 || (code >= 32 && code !== 127);
+    })
+    .join("");
+}
+
 export class AdminEditionApiError extends Error {
   public readonly code: AdminEditionErrorCode;
   public readonly status: number;
@@ -78,11 +87,12 @@ export function buildEditionTitleDefaults(periodType: EditionPeriod, periodStart
 }
 
 function normalizeEditionText(value: string, maxLength: number) {
-  return (value || "")
-    .normalize("NFKC")
-    .replace(/[\u0000-\u0008\u000B-\u001F\u007F]+/g, "")
+  return stripControlCharacters(
+    (value || "")
+      .normalize("NFKC")
+      .replace(/\r\n?/g, "\n")
+  )
     .replace(/[ \t]+/g, " ")
-    .replace(/\r\n?/g, "\n")
     .replace(/\n{3,}/g, "\n\n")
     .trim()
     .slice(0, maxLength);
@@ -105,6 +115,10 @@ function parseJsonSafe<T>(response: Response): Promise<T | null> {
     .json()
     .then((data) => (data as T) ?? null)
     .catch(() => null);
+}
+
+function responseHasJsonContentType(response: Response) {
+  return response.headers.get("content-type")?.toLowerCase().includes("application/json") === true;
 }
 
 function safeDateToIso(date: string) {
@@ -304,6 +318,10 @@ export async function fetchAdminEditions(
       headers: buildAuthHeaders(adminToken),
     });
 
+    if (!responseHasJsonContentType(response)) {
+      throw new AdminEditionApiError("Respuesta no válida del servicio.", ADMIN_EDITOR_API_ERRORS.unavailable, response.status);
+    }
+
     if (!response.ok) {
       const raw = (await parseJsonSafe<Record<string, unknown>>(response)) ?? {};
       const message = extractErrorMessage(raw) || `Error del servicio (${response.status})`;
@@ -365,6 +383,14 @@ export async function createAdminEdition(
       headers: buildAuthHeaders(adminToken),
       body: JSON.stringify(payload),
     });
+
+    if (!responseHasJsonContentType(response)) {
+      const err = new AdminEditionApiError("Respuesta no válida del servicio.", ADMIN_EDITOR_API_ERRORS.unavailable, response.status);
+      if (!isRetryableError(err)) {
+        throw err;
+      }
+      return localFallback();
+    }
 
     if (!response.ok) {
       const raw = (await parseJsonSafe<Record<string, unknown>>(response)) ?? {};

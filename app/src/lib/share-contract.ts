@@ -1,3 +1,5 @@
+import { issueContent } from "@/lib/issue-content";
+
 export type SharePanelSurface = "header" | "cover" | "mobile-sticky";
 export type SharePanelAction =
   | "copy_link"
@@ -44,35 +46,22 @@ export type ShareTrackingEnvelope = SharePanelEvent & {
   correlationId: string;
 };
 
-export const SHARE_DEFAULT_HASHTAGS = [
-  "AcosoVecinal",
-  "RuidoYSalud",
-  "DerechoALaVivienda",
-  "GentrificacionCDMX",
-  "DesplazamientoForzado",
-];
+export const SHARE_DEFAULT_HASHTAGS = [...issueContent.share.hashtags];
 
-export const SHARE_CANONICAL_URL_FALLBACK = "https://yosoymx.com/gaceta-eje-central";
-export const SHARE_DEFAULT_TITLE =
-  "No es 'pleito de vecinos'. Es violencia que rompe vivienda, sueño y salud mental.";
-export const SHARE_DEFAULT_SUMMARY =
-  "Acoso vecinal por ruido y vibración en CDMX: se vuelve daño sanitario, barrera económica y presión para salir del hogar. Esto documenta rutas, evidencia y opciones institucionales.";
-export const SHARE_DEFAULT_QUOTE =
-  '"El acoso por ruido y vibraciones no es una molestia menor: puede dañar la salud mental, romper la convivencia y empujar a las personas fuera de su vivienda. En un contexto de gentrificación extrema donde 20,000 hogares son expulsados anualmente de la CDMX, la ciudad necesita protocolo, medición y respuesta real. No más impunidad para quienes convierten la vivienda en arma de desgaste."';
+export const SHARE_CANONICAL_URL_FALLBACK = issueContent.metadata.canonicalUrl;
+export const SHARE_DEFAULT_TITLE = issueContent.share.title;
+export const SHARE_DEFAULT_SUMMARY = issueContent.share.summary;
+export const SHARE_DEFAULT_QUOTE = issueContent.share.quote;
 
 export const SHARE_REEL_GUIDE = {
-  title: "Guion corto (15s)",
-  shots: [
-    "0-5s: Muestra datos fuertes de contexto (2025, aumento de rentas, impactos).",
-    "5-10s: Muestra 1 testimonio visual o evidencia (bitácora, audio, mapa).",
-    "10-15s: Cierra con CTA: conoce rutas y comparte esta nota.",
-  ],
-  cta: "Texto final: 'No normalicemos el ruido que arruina hogares. Comparte y activa red de apoyo.'",
+  title: issueContent.share.reelGuide.title,
+  shots: [...issueContent.share.reelGuide.shots],
+  cta: issueContent.share.reelGuide.cta,
 };
 
 export const SOCIAL_SHARE_EVENTS_FALLBACK_ENDPOINT = "/api/social-share";
 export const SOCIAL_TRENDS_ENDPOINT = "/api/social-trends";
-export const SHARE_ARTICLE_ID = "gaceta-eje-central";
+export const SHARE_ARTICLE_ID = issueContent.id;
 
 function stripExtraWhitespace(value: string) {
   return value.replace(/\s+/g, " ").trim();

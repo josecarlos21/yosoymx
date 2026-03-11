@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 type AdminFunctionEnv = {
   DB?: {
     prepare: (
@@ -11,6 +12,7 @@ type AdminFunctionEnv = {
   };
   ADMIN_TOKEN?: string;
 };
+/* eslint-enable no-unused-vars */
 
 type AdminEditionRecord = {
   id: string;
@@ -45,6 +47,15 @@ const ADMIN_ERROR_MESSAGES = {
 const MAX_TITLE_LENGTH = 120;
 const MAX_NOTE_LENGTH = 900;
 
+function stripControlCharacters(value: string) {
+  return Array.from(value)
+    .filter((char) => {
+      const code = char.charCodeAt(0);
+      return code === 9 || code === 10 || (code >= 32 && code !== 127);
+    })
+    .join("");
+}
+
 function jsonResponse(payload: unknown, status = 200) {
   return Response.json(payload, {
     status,
@@ -60,11 +71,12 @@ function jsonResponse(payload: unknown, status = 200) {
 
 function sanitizeText(value: unknown, maxLength: number) {
   if (typeof value !== "string") return "";
-  return value
-    .normalize("NFKC")
-    .replace(/[\u0000-\u0008\u000B-\u001F\u007F]+/g, "")
+  return stripControlCharacters(
+    value
+      .normalize("NFKC")
+      .replace(/\r\n?/g, "\n")
+  )
     .replace(/[ \t]+/g, " ")
-    .replace(/\r\n?/g, "\n")
     .replace(/\n{3,}/g, "\n\n")
     .trim()
     .slice(0, maxLength);
@@ -226,7 +238,7 @@ export async function onRequest(context: { request: Request; env: AdminFunctionE
           : `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 
       const createdAt = new Date().toISOString();
-      const status: "draft" = "draft";
+      const status = "draft" as const;
 
       await db
         .prepare(

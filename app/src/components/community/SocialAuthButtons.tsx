@@ -9,10 +9,12 @@ type ProviderConfig = {
   env: string;
 };
 
+/* eslint-disable no-unused-vars */
 type SocialAuthButtonsProps = {
   onMessage: (message: string) => void;
-  onProviderSelected?: (provider: "facebook" | "x" | "tiktok") => void;
+  onProviderSelected?: (provider: SocialProvider) => void;
 };
+/* eslint-enable no-unused-vars */
 
 const PROVIDERS: ProviderConfig[] = [
   {
@@ -65,7 +67,7 @@ export function SocialAuthButtons({ onMessage, onProviderSelected }: SocialAuthB
     target.searchParams.set("provider", provider);
     target.searchParams.set("returnTo", `${window.location.pathname}${window.location.hash}`);
     target.searchParams.set("state", "comment-flow");
-    window.location.href = target.toString();
+    window.location.assign(target.toString());
   };
 
   if (enabledProviders.length === 0) {

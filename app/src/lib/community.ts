@@ -37,6 +37,15 @@ const MAX_CHAR_LIMITS = {
 const MIN_MESSAGE_LENGTH = 12;
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+function stripControlCharacters(value: string) {
+  return Array.from(value)
+    .filter((char) => {
+      const code = char.charCodeAt(0);
+      return code === 9 || code === 10 || (code >= 32 && code !== 127);
+    })
+    .join("");
+}
+
 const COMMUNITY_ERROR_CODES = {
   network: "network-error",
   timeout: "request-timeout",
@@ -58,11 +67,12 @@ export function sanitizeCommunityText(value: string) {
 }
 
 function normalizeString(value: string, maxLength: number) {
-  return value
-    .normalize("NFKC")
-    .replace(/[\u0000-\u0008\u000B-\u001F\u007F]+/g, "")
+  return stripControlCharacters(
+    value
+      .normalize("NFKC")
+      .replace(/\r\n?/g, "\n")
+  )
     .replace(/[ \t]+/g, " ")
-    .replace(/\r\n?/g, "\n")
     .replace(/\n{3,}/g, "\n\n")
     .trim()
     .slice(0, maxLength);
@@ -86,6 +96,10 @@ function isBrowserStorageAvailable() {
 
 function isEmailValid(value: string) {
   return !value || EMAIL_REGEX.test(value);
+}
+
+function responseHasJsonContentType(response: Response) {
+  return response.headers.get("content-type")?.toLowerCase().includes("application/json") === true;
 }
 
 async function parseJsonSafe<T>(response: Response): Promise<T | null> {
@@ -240,6 +254,9 @@ function requestWithTimeout(url: string, init: RequestInit = {}) {
 }
 
 async function parseApiError(response: Response) {
+  if (!responseHasJsonContentType(response)) {
+    return new CommunityApiError("Respuesta no válida del servicio.", COMMUNITY_ERROR_CODES.unavailable, response.status);
+  }
   const raw = await parseJsonSafe<{ error?: string; message?: string }>(response);
   const message = parseApiErrorMessage(raw) || `Error del servicio (${response.status})`;
   return new CommunityApiError(message, pickErrorCode(response.status, message), response.status);
@@ -286,7 +303,7 @@ async function fetchPostsFromApi(kind: CommunityKind, limit: number): Promise<Co
   try {
     const params = new URLSearchParams({ kind, limit: String(limit) });
     const response = await requestWithTimeout(`${communityApiUrl}?${params.toString()}`);
-    if (!response.ok) return null;
+    if (!response.ok || !responseHasJsonContentType(response)) return null;
     const raw = (await parseJsonSafe<{ items?: unknown[] }>(response)) ?? {};
     const items = sanitizeApiList((raw.items ?? []) as unknown[]);
     return sortPosts(items.filter((item) => item.kind === kind && item.approved));
@@ -320,7 +337,7 @@ function createCommunityPost(input: CommunityFormInput): CommunityPost {
     email: valid.email,
     category: valid.category,
     content: valid.content,
-    approved: true,
+    approved: false,
     source: "local",
     createdAt: new Date().toISOString(),
   };
@@ -355,6 +372,10 @@ async function postToApi(form: CommunityFormInput): Promise<CommunityPost | null
 
   if (!response.ok) {
     throw await parseApiError(response);
+  }
+
+  if (!responseHasJsonContentType(response)) {
+    throw new CommunityApiError("Respuesta no válida del servicio.", COMMUNITY_ERROR_CODES.unavailable, response.status);
   }
 
   const raw = (await parseJsonSafe<{ item?: unknown }>(response)) ?? {};

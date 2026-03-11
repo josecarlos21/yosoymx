@@ -1,0 +1,49 @@
+name: GacetaIOS
+options:
+  deploymentTarget:
+    iOS: "18.0"
+settings:
+  base:
+    SWIFT_VERSION: 6.0
+    PRODUCT_BUNDLE_IDENTIFIER: com.yosoymx.gacetaejecentral
+    IPHONEOS_DEPLOYMENT_TARGET: "18.0"
+    TARGETED_DEVICE_FAMILY: "1,2"
+    GENERATE_INFOPLIST_FILE: YES
+    INFOPLIST_KEY_CFBundleDisplayName: Gaceta Eje Central
+    INFOPLIST_KEY_UILaunchScreen_Generation: YES
+    INFOPLIST_KEY_APIBaseURL: https://yosoymx.com/api
+    INFOPLIST_KEY_APIEnvironment: production
+targets:
+  GacetaIOS:
+    type: application
+    platform: iOS
+    sources:
+      - path: GacetaIOS/Sources
+      - path: ../app/shared/content/issue-content.json
+        buildPhase: resources
+      - path: ../app/shared/design/tokens.json
+        buildPhase: resources
+      - path: ../app/public/photos
+        buildPhase: resources
+      - path: ../app/public/pdfs
+        buildPhase: resources
+  GacetaIOSTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: GacetaIOSTests
+      - path: GacetaIOS/Sources/Models.swift
+      - path: GacetaIOS/Sources/Theme.swift
+    settings:
+      base:
+        TEST_HOST: ""
+        BUNDLE_LOADER: ""
+schemes:
+  GacetaIOS:
+    build:
+      targets:
+        GacetaIOS: all
+    test:
+      gatherCoverageData: false
+      targets:
+        - GacetaIOSTests

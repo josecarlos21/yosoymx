@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 "use client"
 
 import * as React from "react"
@@ -17,6 +18,7 @@ export type ChartConfig = {
     | { color?: never; theme: Record<keyof typeof THEMES, string> }
   )
 }
+/* eslint-enable no-unused-vars */
 
 type ChartContextProps = {
   config: ChartConfig

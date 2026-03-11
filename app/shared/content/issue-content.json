@@ -1,0 +1,596 @@
+{
+  "id": "gaceta-eje-central",
+  "metadata": {
+    "version": "2.3.0",
+    "editionLabel": "Primera edición",
+    "location": "Ciudad de México",
+    "publishedDateISO": "2026-03-11",
+    "publishedDisplay": "11 de marzo de 2026",
+    "siteName": "Gaceta Tu Espacio",
+    "masthead": "Gaceta Tu Espacio Eje Central",
+    "shortMasthead": "Gaceta Eje Central",
+    "canonicalUrl": "https://yosoymx.com/gaceta-eje-central",
+    "description": "Acoso vecinal por ruido y vibración en CDMX: rutas, evidencia y opciones institucionales para proteger vivienda y salud.",
+    "articleLabel": "Artículo · Vivienda / ruido / desplazamiento",
+    "topicLabel": "Tema central",
+    "topicValue": "Cuando la vivienda deja de ser refugio",
+    "coverThemeLine": "Acoso vecinal · Gentrificación · Desplazamiento",
+    "heroImage": {
+      "src": "/photos/periodico-cover-01.png",
+      "alt": "Registro de impacto urbano relacionado con acoso vecinal, ruido y vibración.",
+      "caption": "Señales visuales del impacto vecinal: tránsito, ruido recurrente y desgaste comunitario."
+    },
+    "footerBadges": [
+      "Artículo oficial",
+      "Fuentes verificables",
+      "Primera edición",
+      "Marzo 2026"
+    ]
+  },
+  "navigation": [
+    { "id": "portada", "label": "Portada", "icon": "newspaper" },
+    { "id": "problema", "label": "El Problema", "icon": "alert-triangle" },
+    { "id": "contexto", "label": "Contexto", "icon": "trending-up" },
+    { "id": "impacto", "label": "Impacto", "icon": "heart-pulse" },
+    { "id": "datos", "label": "Los Datos", "icon": "bar-chart-3" },
+    { "id": "rutas", "label": "Rutas", "icon": "building-2" },
+    { "id": "accion", "label": "Acción", "icon": "scroll-text" },
+    { "id": "galeria", "label": "Galería", "icon": "camera" },
+    { "id": "fuentes", "label": "Fuentes", "icon": "link-2" },
+    { "id": "recursos", "label": "Recursos", "icon": "book-open" },
+    { "id": "comentarios", "label": "Comentarios", "icon": "message-square-warning" },
+    { "id": "historial", "label": "Historial", "icon": "scroll-text" },
+    { "id": "contacto", "label": "Contacto", "icon": "users" }
+  ],
+  "share": {
+    "title": "No es 'pleito de vecinos'. Es violencia que rompe vivienda, sueño y salud mental.",
+    "summary": "Acoso vecinal por ruido y vibración en CDMX: se vuelve daño sanitario, barrera económica y presión para salir del hogar. Esto documenta rutas, evidencia y opciones institucionales.",
+    "quote": "\"El acoso por ruido y vibraciones no es una molestia menor: puede dañar la salud mental, romper la convivencia y empujar a las personas fuera de su vivienda. En un contexto de gentrificación extrema donde 20,000 hogares son expulsados anualmente de la CDMX, la ciudad necesita protocolo, medición y respuesta real. No más impunidad para quienes convierten la vivienda en arma de desgaste.\"",
+    "hashtags": [
+      "AcosoVecinal",
+      "RuidoYSalud",
+      "DerechoALaVivienda",
+      "GentrificacionCDMX",
+      "DesplazamientoForzado"
+    ],
+    "reelGuide": {
+      "title": "Guion corto (15s)",
+      "shots": [
+        "0-5s: Muestra datos fuertes de contexto (2025, aumento de rentas, impactos).",
+        "5-10s: Muestra 1 testimonio visual o evidencia (bitácora, audio, mapa).",
+        "10-15s: Cierra con CTA: conoce rutas y comparte esta nota."
+      ],
+      "cta": "Texto final: 'No normalicemos el ruido que arruina hogares. Comparte y activa red de apoyo.'"
+    }
+  },
+  "cover": {
+    "eyebrow": "Portada · Primera plana",
+    "title": "No es \"pleito de vecinos\".",
+    "titleAccent": "Es violencia que rompe vivienda, sueño y salud mental.",
+    "summary": "En la Ciudad de México, el acoso vecinal por ruido y vibración se entrelaza con procesos de gentrificación que han expulsado a más de 20,000 hogares anuales. Las rentas aumentaron 46% en cinco años y las denuncias por ruido crecen sin parar. Este dossier documenta el fenómeno, sus efectos en la salud y las rutas institucionales disponibles.",
+    "quickFacts": [
+      {
+        "title": "Qué es",
+        "text": "Patrones deliberados de ruido, vibración o hostigamiento que trascienden la molestia ordinaria y afectan el derecho a la vivienda digna."
+      },
+      {
+        "title": "Por qué importa",
+        "text": "No sólo altera la convivencia: puede causar ansiedad, insomnio, deterioro emocional y empujar a las personas fuera de sus hogares."
+      },
+      {
+        "title": "Qué hacer",
+        "text": "Documentar, conocer las rutas institucionales (PAOT, PROSOC, FGJ) y exigir respuesta coordinada desde múltiples frentes."
+      }
+    ],
+    "leadEditorial": "\"Cuando el ruido o la vibración se usan para castigar, intimidar o desgastar a una persona dentro de su vivienda, el daño deja de ser una simple incomodidad. La vivienda pierde su función básica de refugio y el conflicto se convierte en un problema de convivencia, salud y permanencia habitacional.\"",
+    "campaign": {
+      "kicker": "Hashtags y reel",
+      "title": "Campaña en tiempo real (manual)",
+      "badge": "#AcosoVecinal",
+      "copyQuoteLabel": "Copiar frase pública",
+      "copyReelLabel": "Copiar guion Reel",
+      "openTikTokLabel": "Abrir TikTok",
+      "openXLabel": "Ver hashtag base en X"
+    },
+    "damageMap": {
+      "title": "Mapa del daño",
+      "subtitle": "Impacto del ruido crónico en salud.",
+      "metrics": [
+        { "label": "Interrupción del sueño", "value": 92, "note": "muy alto" },
+        { "label": "Estrés / ansiedad", "value": 88, "note": "alto" },
+        { "label": "Deterioro cognitivo", "value": 76, "note": "alto" },
+        { "label": "Riesgo de desplazamiento", "value": 71, "note": "creciente" }
+      ]
+    },
+    "keyFigures": {
+      "title": "Cifras clave",
+      "items": [
+        { "label": "Denuncias por ruido (2025)", "value": "1,178" },
+        { "label": "Aumento rentas 2020-2025", "value": "+46%" },
+        { "label": "Hogares expulsados/año", "value": "20,000+" },
+        { "label": "Reportes al 911 por música", "value": "83%" }
+      ]
+    },
+    "sidebarLabel": "Navegar edición"
+  },
+  "problem": {
+    "eyebrow": "01 · El Problema",
+    "title": "¿Qué está pasando realmente?",
+    "summary": "Esta nota abre el caso sin rodeos: cuando la vivienda deja de sentirse segura y el daño se vuelve sostenido, ya no hablamos de una simple molestia vecinal.",
+    "cards": [
+      {
+        "icon": "home",
+        "title": "La vivienda deja de ser refugio",
+        "text": "El golpe real no siempre es el volumen. Es la pérdida de seguridad dentro del propio espacio. Cuando el ruido o la vibración se usan para castigar o desgastar, el daño trasciende la incomodidad."
+      },
+      {
+        "icon": "heart-pulse",
+        "title": "La salud mental sí entra aquí",
+        "text": "Sueño roto, ansiedad, hipervigilancia, irritabilidad y deterioro emocional son efectos esperables, no sobreactuación. El ruido crónico activa el sistema nervioso de forma sostenida."
+      },
+      {
+        "icon": "gavel",
+        "title": "La respuesta suele llegar fragmentada",
+        "text": "Condominio, ruido, ambiente, delito: cuando nadie integra el caso, el acoso se mete por la grieta. La normativa existe, pero la coordinación institucional es débil."
+      }
+    ],
+    "timeline": {
+      "title": "Cómo escala el conflicto",
+      "steps": [
+        {
+          "step": "Ruido o conflicto inicial",
+          "desc": "El detonante suele ser una molestia que escala",
+          "detail": "Puede manifestarse como golpes en muros, música con bajos penetrantes o arrastre pesados a deshoras."
+        },
+        {
+          "step": "Respuesta institucional insuficiente",
+          "desc": "La denuncia no llega o no se atiende",
+          "detail": "La administración condominal minimiza el hecho o las patrullas llegan tarde y no pueden actuar."
+        },
+        {
+          "step": "Represalia acústica o vibratoria",
+          "desc": "El conflicto se convierte en hostigamiento",
+          "detail": "La queja irrita al generador, quien ahora utiliza el ruido o la vibración de manera deliberada y sistémica."
+        },
+        {
+          "step": "Escalada y afectación a terceros",
+          "desc": "El daño se expande a otros vecinos",
+          "detail": "El ruido y sobre todo la vibración comienza a ser percibido por otros departamentos transponiendo losas."
+        },
+        {
+          "step": "Desgaste, miedo o presión para salir",
+          "desc": "La vivienda deja de ser habitable",
+          "detail": "El ambiente se vuelve hostil. Hay privación crónica del sueño, estrés y a menudo desplazamiento forzado."
+        }
+      ]
+    }
+  },
+  "context": {
+    "eyebrow": "02 · Contexto",
+    "title": "Gentrificación y desplazamiento",
+    "summary": "El fenómeno de acoso vecinal no ocurre en el vacío. Se da en un contexto de presión inmobiliaria extrema que ha transformado colonias enteras de la Ciudad de México.",
+    "statCards": [
+      {
+        "number": "46%",
+        "label": "Aumento de rentas",
+        "description": "Incremento promedio de rentas en CDMX entre 2020 y 2025",
+        "trend": "De $12,000 a $17,600 mensuales"
+      },
+      {
+        "number": "20K",
+        "label": "Hogares expulsados",
+        "description": "Hogares expulsados anualmente por falta de vivienda asequible",
+        "trend": "Según Programa OT 2020-2035"
+      },
+      {
+        "number": "$54K",
+        "label": "Renta promedio",
+        "description": "Renta promedio en colonias como Granada (Miguel Hidalgo)",
+        "trend": "Las más caras de la ciudad"
+      },
+      {
+        "number": "1,178",
+        "label": "Denuncias 2025",
+        "description": "Denuncias por ruido registradas ante la PAOT",
+        "trend": "Aumento desde 887 en 2019"
+      }
+    ],
+    "affectedColonies": {
+      "title": "Colonias más afectadas",
+      "items": [
+        {
+          "name": "Roma Norte/Sur",
+          "district": "Cuauhtémoc",
+          "desc": "Aumento masivo de rentas, llegada de nómadas digitales, coworkings y tiendas boutique"
+        },
+        {
+          "name": "Condesa",
+          "district": "Cuauhtémoc",
+          "desc": "Epicentro de protestas anti-gentrificación 2025, rentas sobre $60,000"
+        },
+        {
+          "name": "Juárez",
+          "district": "Cuauhtémoc",
+          "desc": "Zona Rosa y Paseo de la Reforma: edificios convertidos en residencias de lujo"
+        },
+        {
+          "name": "Narvarte",
+          "district": "Benito Juárez",
+          "desc": "Colonia tradicionalmente clase media en rápida transformación"
+        },
+        {
+          "name": "Escandón",
+          "district": "Miguel Hidalgo",
+          "desc": "Cercanía con Condesa ha acelerado cambio de perfil de residentes"
+        },
+        {
+          "name": "Santa María la Ribera",
+          "district": "Cuauhtémoc",
+          "desc": "Atención de inversionistas por arquitectura histórica y ubicación"
+        }
+      ]
+    },
+    "protests": {
+      "title": "Protestas 2025",
+      "paragraphs": [
+        "En julio de 2025, organizaciones vecinales convocaron la primera protesta masiva contra la gentrificación en CDMX. La marcha recorrió colonias Condesa, Roma y Juárez hasta llegar al Ángel de la Independencia.",
+        "Consignas como \"La gentrificación no es progreso, es despojo\" y \"¡Fuera gringos!\" reflejan la tensión por la llegada masiva de nómadas digitales y expats, principalmente de Estados Unidos."
+      ],
+      "quoteSource": "Según ONU-Hábitat:",
+      "quote": "\"Cuando los vecindarios urbanos que se regeneran proporcionan espacios de calidad para quienes pueden darse el lujo de vivir en ellos, muchos de sus primeros habitantes se ven obligados a retirarse, convirtiéndose en viajeros cotidianos que viven lejos de sus fuentes de trabajo.\""
+    }
+  },
+  "impact": {
+    "eyebrow": "03 · Impacto",
+    "title": "Salud mental: no es una nota al pie",
+    "summary": "El daño no depende únicamente de decibeles. Importan la imprevisibilidad, la repetición, la sensación de invasión del espacio propio y la imposibilidad de controlar el entorno.",
+    "documentedEffectsTitle": "Efectos documentados",
+    "documentedEffectsSubtitle": "Según OMS y estudios científicos recientes.",
+    "effects": [
+      "Alteración del sueño y descanso no reparador",
+      "Ansiedad y estrés sostenido (aumento de cortisol)",
+      "Hipervigilancia y estado de alerta permanente",
+      "Deterioro de concentración y memoria de trabajo",
+      "Irritabilidad y agresividad",
+      "Fatiga mental y agotamiento",
+      "Deterioro de calidad de vida y bienestar"
+    ],
+    "clinicalNote": {
+      "title": "Nota clínica",
+      "paragraphs": [
+        "Cuando el episodio es intermitente, nocturno, impulsivo o vibratorio, el cuerpo no logra anticiparlo ni adaptarse bien. Eso favorece hipervigilancia, fatiga, irritabilidad y deterioro emocional. El sistema nervioso permanece en estado de alerta permanente.",
+        "Las vibraciones de baja frecuencia son particularmente problemáticas porque viajan a través de estructuras, plataformos y pisos, generando una sensación corporal de inestabilidad que el sistema nervioso no logra ignorar, incluso cuando el sonido no es particularmente fuerte."
+      ],
+      "criticalTitle": "Punto crítico",
+      "criticalText": "Pedir una reacción impecable a alguien que lleva semanas o meses con sueño fragmentado es una tontería administrativa elegante. El impacto psicológico es parte central del caso, no una nota marginal.",
+      "sourceHref": "https://www.who.int/tools/compendium-on-health-and-environment/environmental-noise/",
+      "sourceLabel": "Ver guía OMS sobre ruido ambiental"
+    }
+  },
+  "data": {
+    "eyebrow": "04 · Los Datos",
+    "title": "Estadísticas y marco legal",
+    "summary": "La normativa existe, pero la brecha entre la ley y su aplicación es abismal. Aquí los números y las leyes que deberían proteger el derecho a la tranquilidad.",
+    "legalFrame": {
+      "title": "Marco normativo",
+      "items": [
+        {
+          "title": "Ley de Cultura Cívica CDMX",
+          "badge": "Art. 27",
+          "text": "Sanciona producir ruidos que atenten contra la tranquilidad o representen riesgo a la salud.",
+          "sanction": "Sanción: 11-40 UMA ($1,244-$4,525) o arresto 13-24 hrs"
+        },
+        {
+          "title": "Código Penal CDMX",
+          "badge": "Art. 346",
+          "text": "Penaliza emisiones de ruido o vibraciones provenientes de fuentes fijas.",
+          "sanction": "Sanción: 2-6 años prisión + multa 1,000-5,000 UMA"
+        },
+        {
+          "title": "Constitución Política de los Estados Unidos Mexicanos",
+          "badge": "Art. 4",
+          "text": "Toda familia tiene derecho a disfrutar de vivienda digna y decorosa. El Estado debe establecer los instrumentos y apoyos necesarios para alcanzar este objetivo."
+        }
+      ]
+    },
+    "noiseLimits": {
+      "title": "Límites de ruido permitidos",
+      "grid": [
+        { "value": "65 dB", "label": "Zona residencial", "detail": "06:00-20:00" },
+        { "value": "62 dB", "label": "Zona residencial", "detail": "20:00-06:00" },
+        { "value": "68 dB", "label": "Zona comercial", "detail": "Diurno" }
+      ],
+      "paragraphs": [
+        "Norma NADF-005-AMBT-2013: Establece los límites máximos permisibles de emisiones sonoras para fuentes fijas en la Ciudad de México.",
+        "La PAOT ha suspendido 10 establecimientos por exceder niveles de ruido en lo que va de 2025, y ha exhortado a 277 a cumplir la norma."
+      ],
+      "highlightTitle": "Dato relevante",
+      "highlightText": "En 2017, la OMS clasificó a la CDMX como la octava ciudad más ruidosa del mundo, superada solo por ciudades como Guangzhou, Delhi, El Cairo y Mumbai."
+    }
+  },
+  "routes": {
+    "eyebrow": "05 · Rutas institucionales",
+    "title": "¿A dónde acudir?",
+    "summary": "La respuesta institucional existe pero está fragmentada. Conocer las rutas y la competencia de cada autoridad es el primer paso para exigir atención.",
+    "authorities": [
+      {
+        "icon": "waves",
+        "label": "PAOT",
+        "title": "Ruido y vibración",
+        "text": "La PAOT investiga la legalidad de acciones de autoridades y particulares; su canal de denuncia opera por internet 24/7 y también por teléfono o presencial.",
+        "href": "https://paot.org.mx/micrositios/sabias_que/RUIDO/denuncia.html",
+        "meta": "Denuncia en línea / teléfono / presencial"
+      },
+      {
+        "icon": "building-2",
+        "label": "PROSOC",
+        "title": "Asesoría y materia condominal",
+        "text": "PROSOC orienta sobre asuntos administrativos, jurídicos, sociales, inmobiliarios y condominales para hacer valer derechos en la ciudad.",
+        "href": "https://www.prosoc.cdmx.gob.mx/conoce/asesoria-y-orientacion",
+        "meta": "Mitla 250 · orientación y trámites"
+      },
+      {
+        "icon": "shield-alert",
+        "label": "FGJ CDMX",
+        "title": "Denuncia digital y vía penal",
+        "text": "La Fiscalía de CDMX ofrece servicios en línea, incluida denuncia digital, además de ruta presencial cuando el caso lo exige.",
+        "href": "https://www.fgjcdmx.gob.mx/nuestros-servicios/en-linea",
+        "meta": "Denuncia digital / servicios en línea"
+      },
+      {
+        "icon": "scale",
+        "label": "Juzgado Cívico",
+        "title": "Justicia cívica",
+        "text": "Para infracciones contra la tranquilidad por ruido excesivo. Puede presentar queja virtual o acudir presencialmente.",
+        "href": "https://www.seguridad.cdmx.gob.mx/",
+        "meta": "Queja virtual / atención presencial"
+      },
+      {
+        "icon": "siren",
+        "label": "Emergencia",
+        "title": "Seguridad y constancia inmediata",
+        "text": "Cuando el episodio está ocurriendo con riesgo, amenaza o agresión, la prioridad es seguridad y constancia en tiempo real.",
+        "href": "tel:911",
+        "meta": "911 / SSC / atención inmediata"
+      }
+    ],
+    "evidenceChecklist": {
+      "title": "Checklist de evidencia mínima",
+      "items": [
+        "Bitácora diaria con fecha, hora, duración, intensidad percibida y efecto",
+        "Audios o videos con marcas de tiempo y contexto del lugar",
+        "Testigos o vecinos afectados por el mismo episodio",
+        "Capturas de mensajes, oficios o reportes a administración",
+        "Constancias médicas o psicológicas si existe afectación clínica",
+        "Registro de denuncias previas y respuestas recibidas"
+      ]
+    }
+  },
+  "action": {
+    "eyebrow": "06 · Acción",
+    "title": "Documento base para adaptar",
+    "summary": "Un formato de denuncia que integra las múltiples aristas del problema: ruido, vibración, salud mental y derecho a la vivienda. Adáptalo a tu caso específico.",
+    "howToUse": {
+      "title": "Cómo usarlo",
+      "steps": [
+        "1. Cambia domicilio, fechas, horarios y síntomas reales.",
+        "2. Adjunta bitácora, clips, testigos y mensajes.",
+        "3. Duplica el escrito según autoridad competente.",
+        "4. Conserva versión firmada y versión digital.",
+        "5. Solicita folio y seguimiento de tu denuncia."
+      ]
+    },
+    "recommendation": {
+      "title": "Recomendación",
+      "text": "Presenta el escrito en múltiples instancias simultáneamente: PROSOC (si es condominio), PAOT (si hay fuentes fijas), Juzgado Cívico (infracción administrativa) y FGJ (si hay elementos penales). La presión coordinada aumenta la probabilidad de respuesta."
+    },
+    "documentTitle": "Documento base",
+    "copyLabel": "Copiar texto",
+    "draft": "ASUNTO: Denuncia y solicitud de actuación coordinada por acoso vecinal mediante ruido y vibración estructural.\n\nA quien corresponda:\n\nPor medio del presente expongo que en el inmueble ubicado en [DOMICILIO] se presentan episodios reiterados de vibración y/o ruido de carácter impulsivo, de baja frecuencia o retumbante, principalmente en los horarios [HORARIOS], con una duración aproximada de [DURACIÓN].\n\nLa afectación se percibe en piso, techo y/o muros, altera el sueño, la concentración y la estabilidad emocional, y además impacta a otras viviendas del entorno. El patrón no corresponde a una molestia aislada, sino a un hostigamiento persistente con efectos reales sobre la salud mental y la permanencia digna en la vivienda.\n\nSOLICITO:\n1. Admisión de la denuncia y asignación de folio.\n2. Verificación in situ en los horarios de mayor incidencia.\n3. Canalización coordinada según competencia: justicia cívica, vía condominal, vía ambiental, vía penal y/o antidiscriminación.\n4. Medidas preventivas y de no repetición.\n5. Protección contra represalias.\n\nADJUNTO:\n- Bitácora de hechos.\n- Audios, videos y testigos.\n- Comunicaciones con administración y autoridades.\n- Cualquier constancia médica o psicológica disponible.\n\nATENTAMENTE\n[NOMBRE]\n[TELÉFONO / CORREO]\n[FECHA]"
+  },
+  "sources": {
+    "eyebrow": "07 · Fuentes",
+    "title": "Documentación y referencias",
+    "summary": "Esta investigación se basa en fuentes oficiales, documentos académicos y reportes periodísticos verificables.",
+    "items": [
+      {
+        "group": "Institucional",
+        "title": "PAOT CDMX",
+        "note": "Procuraduría Ambiental y del Ordenamiento Territorial. Estadísticas de denuncias y suspensiones.",
+        "href": "https://paot.org.mx"
+      },
+      {
+        "group": "Institucional",
+        "title": "PROSOC CDMX",
+        "note": "Procuraduría Social. Mediación de conflictos condominales y asesoría jurídica.",
+        "href": "https://www.prosoc.cdmx.gob.mx"
+      },
+      {
+        "group": "Institucional",
+        "title": "FGJ CDMX",
+        "note": "Fiscalía General de Justicia. Denuncia digital y servicios en línea.",
+        "href": "https://www.fgjcdmx.gob.mx"
+      },
+      {
+        "group": "Académico",
+        "title": "Informe Iberoamericana 2025",
+        "note": "'Travesías Forzadas: Desplazamiento interno en México 2024'. Universidad Iberoamericana.",
+        "href": "https://ibero.mx"
+      },
+      {
+        "group": "Académico",
+        "title": "ONU-Hábitat",
+        "note": "Definición y análisis de gentrificación urbana.",
+        "href": "https://unhabitat.org"
+      },
+      {
+        "group": "Salud",
+        "title": "OMS - Ruido ambiental",
+        "note": "Directrices sobre ruido ambiental y su impacto en la salud.",
+        "href": "https://www.who.int/tools/compendium-on-health-and-environment/environmental-noise/"
+      },
+      {
+        "group": "Normativo",
+        "title": "Ley de Cultura Cívica CDMX",
+        "note": "Artículo 27: infracciones contra la tranquilidad por ruido.",
+        "href": "https://paot.org.mx"
+      },
+      {
+        "group": "Normativo",
+        "title": "Código Penal CDMX",
+        "note": "Artículo 346: delito de emisiones de ruido o vibraciones.",
+        "href": "https://www.congresocdmx.gob.mx"
+      },
+      {
+        "group": "Periodístico",
+        "title": "El Economista - EconoHábitat",
+        "note": "Cobertura de gentrificación y precios de vivienda en CDMX.",
+        "href": "https://www.eleconomista.com.mx"
+      }
+    ]
+  },
+  "closing": {
+    "title": "Frase pública sugerida",
+    "subtitle": "Para compartir, citar o adaptar."
+  },
+  "resources": {
+    "eyebrow": "08 · Biblioteca de Recursos",
+    "title": "Archivos y Documentos",
+    "summary": "Documentación técnica, guías legales y libros de estudio completos disponibles para lectura profunda. Descarga o visualiza directamente.",
+    "pdfs": [
+      {
+        "id": "ley-condominio",
+        "title": "Ley de Propiedad en Condominio",
+        "description": "Marco legal actualizado en la materia condominal que fundamenta derechos y obligaciones.",
+        "fileName": "ley_propiedad_en_condominio.pdf",
+        "href": "/pdfs/ley_propiedad_en_condominio.pdf"
+      },
+      {
+        "id": "anti-acoso-cdmx",
+        "title": "Libro completo: Anti Acoso CDMX",
+        "description": "Manual 2026 exhaustivo sobre prevención y mecanismos de defensa contra el acoso vecinal.",
+        "fileName": "libro_completo_anti_acoso_cdmx_2026.pdf",
+        "href": "/pdfs/libro_completo_anti_acoso_cdmx_2026.pdf"
+      },
+      {
+        "id": "guia-medidas-proteccion",
+        "title": "Guía: Medidas de protección (CNPP)",
+        "description": "Protocolo para medidas de protección bajo el Artículo 137 del Código Nacional de Procedimientos Penales.",
+        "fileName": "guia_ejecucion_medidas_cnp_137.pdf",
+        "href": "/pdfs/guia_ejecucion_medidas_cnp_137.pdf"
+      },
+      {
+        "id": "acoso-china-cdmx",
+        "title": "Estudio: Acoso vecinal (China y CDMX)",
+        "description": "Comparativo de metodologías de acoso y uso de vibraciones en ambos contextos urbanos.",
+        "fileName": "acoso_vecinal_china_cdmx.pdf",
+        "href": "/pdfs/acoso_vecinal_china_cdmx.pdf"
+      }
+    ]
+  },
+  "gallery": {
+    "eyebrow": "Galería del periódico",
+    "title": "No es un \"pleito de vecinos\".\nEs violencia.",
+    "summary": "Registro visual del impacto real en la comunidad. Las metodologías de hostigamiento rompen la vivienda, vulneran el sueño y el derecho a la salud mental.",
+    "items": [
+      {
+        "id": "cover-visual-01",
+        "title": "Violencia silenciosa · Privación del sueño",
+        "description": "Alteración severa del ciclo de sueño. La vibración y el impacto físico traspasan muros, provocando agotamiento crónico y daño a la salud mental.",
+        "fileName": "/photos/impacto-psicologico.png"
+      },
+      {
+        "id": "cover-visual-02",
+        "title": "Desgaste material · Hostigamiento y burocracia",
+        "description": "Fisuras y desgaste acelerado. El hostigamiento constante impacta física y estructuralmente el espacio íntimo, documentado sistemáticamente.",
+        "fileName": "/photos/dano-estructural.png"
+      }
+    ]
+  },
+  "community": {
+    "comments": {
+      "eyebrow": "09 · Comentarios",
+      "title": "Comentarios de comunidad",
+      "summary": "Comparte experiencias, dudas o señales de apoyo. Los mensajes contribuyen a construir un archivo vivo.",
+      "formTitle": "Déjanos tu mensaje",
+      "formIntro": "Tu aportación entra a revisión antes de publicarse. Si el servicio falla, el borrador queda guardado solo en este navegador hasta reintentar.",
+      "socialAuthIntro": "No necesitas iniciar sesión para compartir una experiencia útil.",
+      "fallbackSocialAuth": "El correo es opcional y solo sirve para dar seguimiento editorial si hace falta.",
+      "nameLabel": "Nombre o alias",
+      "namePlaceholder": "Ej. Ana G.",
+      "emailLabel": "Correo (opcional)",
+      "emailPlaceholder": "nombre@correo.com",
+      "messageLabel": "Mensaje",
+      "messagePlaceholder": "Qué parte te fue útil y qué falta fortalecer.",
+      "submitLabel": "Publicar comentario",
+      "reviewMessage": "Comentario recibido y enviado a revisión.",
+      "feedTitle": "Últimos comentarios",
+      "feedEmpty": "Aún no hay comentarios aprobados. Sé la primera persona en dejar una experiencia útil.",
+      "refreshLabel": "Actualizar feed",
+      "lastApprovedLabel": "Últimos aprobados"
+    },
+    "history": {
+      "eyebrow": "10 · Historial comunitario",
+      "title": "Historia compartida",
+      "summary": "Comparte rutas útiles, recomendaciones o aprendizajes colectivos para fortalecer la respuesta común.",
+      "formTitle": "Añadir aporte al historial",
+      "formIntro": "Cada aporte entra a revisión antes de mostrarse. Prioriza rutas concretas, documentos útiles y aprendizajes verificables.",
+      "nameLabel": "Nombre o alias",
+      "namePlaceholder": "Ej. Colectivo A.",
+      "emailLabel": "Correo (opcional)",
+      "emailPlaceholder": "nombre@correo.com",
+      "topicLabel": "Tema",
+      "topicPlaceholder": "Ej. Testimonio · Ruta legal",
+      "messageLabel": "Aporte",
+      "messagePlaceholder": "Comparte información útil o experiencias de ruta y apoyo.",
+      "submitLabel": "Compartir aporte",
+      "reviewMessage": "Aporte recibido y enviado a revisión.",
+      "allFilterLabel": "Todos",
+      "empty": "Aún no hay aportes aprobados en este filtro. Publica la primera aportación útil."
+    },
+    "admin": {
+      "title": "Moderación comunitaria",
+      "pendingTitle": "Pendientes por revisar",
+      "approvedTitle": "Publicados",
+      "emptyPending": "No hay aportes pendientes.",
+      "approveLabel": "Aprobar",
+      "rejectLabel": "Rechazar",
+      "hideLabel": "Ocultar"
+    }
+  },
+  "admin": {
+    "eyebrow": "Panel administrativo",
+    "title": "Editorial de la semana / edición diaria",
+    "summary": "Genera ediciones por bloque temporal para publicar recorridos comunitarios, cápsulas históricas o reportes. Esta versión permite crear lotes con rango diario o semanal y dejar trazabilidad para revisión.",
+    "tokenLabel": "Clave de administrador",
+    "tokenPlaceholder": "Ingresa tu clave de acceso",
+    "tokenHelp": "Solo administradores autorizados. La clave se guarda localmente en este navegador.",
+    "unlockLabel": "Desbloquear",
+    "titleFieldLabel": "Título de edición",
+    "titlePlaceholder": "Edición diaria · Marzo 2026",
+    "periodLabel": "Tipo de edición",
+    "periodDailyLabel": "Diaria",
+    "periodWeeklyLabel": "Semanal",
+    "periodStartLabel": "Inicio del periodo",
+    "notesLabel": "Notas de edición",
+    "notesPlaceholder": "Objetivo narrativo y cambios de la edición.",
+    "createLabel": "Generar nueva edición",
+    "refreshLabel": "Actualizar",
+    "logoutLabel": "Cerrar sesión admin",
+    "emptyEditions": "No hay ediciones programadas. Crea una edición para activar la publicación semanal o diaria.",
+    "operationalHint": "Sugerencia operativa: si decides publicar por semana, inicia en lunes para mantener consistencia."
+  },
+  "contact": {
+    "eyebrow": "11 · Contacto y seguimiento",
+    "title": "¿Tienes duda o quieres saber más?",
+    "summary": "Escríbeme para pedir documentación adicional, validar fuentes o dar seguimiento editorial. También puedes seguir nuevas piezas y avances por canales directos.",
+    "email": "contacto@yosoy.mx",
+    "mailSubject": "Duda desde la web de Gaceta Tu Espacio",
+    "mailLabel": "Enviar correo a contacto@yosoy.mx",
+    "tiktok": "@joseca_npc",
+    "tiktokUrl": "https://www.tiktok.com/@joseca_npc",
+    "tiktokLabel": "TikTok @joseca_npc",
+    "site": "https://yosoymx.com",
+    "siteLabel": "Visitar sitio: yosoymx.com"
+  }
+}
