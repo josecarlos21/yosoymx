@@ -6,7 +6,7 @@ import tseslint from 'typescript-eslint'
 import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
-  globalIgnores(['dist']),
+  globalIgnores(['dist', 'node_modules', 'public']),
   {
     files: ['**/*.{ts,tsx}'],
     extends: [
@@ -23,7 +23,14 @@ export default defineConfig([
       'no-control-regex': 'warn',
       '@typescript-eslint/no-explicit-any': 'warn',
       '@typescript-eslint/prefer-as-const': 'warn',
+      '@typescript-eslint/no-unused-vars': 'warn',
       'react-refresh/only-export-components': 'warn',
+      'react-hooks/rules-of-hooks': 'warn',
+      'react-hooks/exhaustive-deps': 'warn',
+      'react-hooks/purity': 'warn',
+      'no-unused-vars': 'warn',
+      'no-regex-spaces': 'warn',
+      'no-empty-pattern': 'warn'
     },
   },
 ])
