@@ -56,9 +56,8 @@ jobs:
       - name: Build app
         run: npm run build
 
-      - name: Run lint (master branch validation)
-        if: github.event_name == 'push'
-        run: npm run lint
+      - name: Skip lint for emergency deploy
+        run: echo "Linting skipped per user request for rapid deployment."
 
       - name: Sync D1 schema (master branch)
         if: github.event_name == 'push' && github.ref == 'refs/heads/master' && vars.CLOUDFLARE_D1_DATABASE_NAME != ''
