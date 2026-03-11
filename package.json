@@ -1,0 +1,12 @@
+{
+    "name": "yosoymx-root",
+    "private": true,
+    "version": "2.0.0",
+    "description": "Root workspace for Gaceta Eje Central",
+    "scripts": {
+        "dev": "npm run dev --prefix app",
+        "build": "npm run build --prefix app",
+        "lint": "npm run lint --prefix app",
+        "deploy": "gh run rerun $(gh run list --branch master --limit 1 --json databaseId -q '.[0].databaseId')"
+    }
+}
