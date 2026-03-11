@@ -22,6 +22,7 @@ import {
   Scale,
   ScrollText,
   ShieldAlert,
+  ShieldCheck,
   Siren,
   Waves,
   TrendingUp,
@@ -32,9 +33,13 @@ import {
   Menu,
   X
 } from "lucide-react";
+import { fetchCommunityPosts, sanitizeCommunityText, submitCommunityPost, type CommunityPost } from "@/lib/community";
+import { AdminPanelSection } from "@/components/community/AdminPanelSection";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { MediaGallerySection } from "@/components/media/MediaGallerySection";
+import { SocialAuthButtons } from "@/components/community/SocialAuthButtons";
 
 // Design Tokens - Editorial Style 2026
 const TOKENS = {
@@ -77,7 +82,12 @@ const sectionMeta = [
   { id: "accion", label: "Acción", icon: ScrollText },
   { id: "fuentes", label: "Fuentes", icon: Link2 },
   { id: "recursos", label: "Recursos", icon: BookOpen },
+  { id: "comentarios", label: "Comentarios", icon: MessageSquareWarning },
+  { id: "historial", label: "Historial", icon: ScrollText },
+  { id: "admin", label: "Admin", icon: ShieldCheck },
+  { id: "contacto", label: "Contacto", icon: Users },
 ];
+
 
 type PdfResource = {
   id: string;
@@ -86,6 +96,56 @@ type PdfResource = {
   fileName: string;
   href: string;
 };
+
+type PdfDownloadState = {
+  status: "idle" | "checking" | "ok" | "missing" | "error";
+  message?: string;
+  sizeLabel?: string;
+};
+
+type CommunityFormState = {
+  displayName: string;
+  email: string;
+  content: string;
+  category: string;
+  website: string;
+};
+
+type CommunityRequestState = {
+  kind: "idle" | "success" | "error" | "loading";
+  message: string;
+};
+
+type FieldValidationErrors = {
+  displayName: string;
+  email: string;
+  content: string;
+  category: string;
+  website: string;
+  submit: string;
+};
+
+type CategoryOption = {
+  value: string;
+  label: string;
+};
+
+const CONTACT_DATA = {
+  email: "contacto@yosoy.mx",
+  tiktok: "@joseca_npc",
+  tiktokUrl: "https://www.tiktok.com/@joseca_npc",
+  site: "https://yosoymx.com",
+};
+
+const MAX_NAME_LENGTH = 80;
+const MAX_EMAIL_LENGTH = 180;
+const MAX_COMMENT_MESSAGE_LENGTH = 1200;
+const MAX_CATEGORY_LENGTH = 60;
+const MAX_WEBSITE_LENGTH = 120;
+const MIN_MESSAGE_LENGTH = 12;
+const COMMUNITY_COOLDOWN_SECONDS = 25;
+const COMMUNITY_COOLDOWN_STORAGE_KEY = "yosoymx.community.cooldown.v1";
+const HISTORY_FILTER_ALL = "todos";
 
 const PDF_RESOURCES: PdfResource[] = [
   {
@@ -355,6 +415,119 @@ function StatCard({ number, label, description, trend }: { number: string; label
   );
 }
 
+function formatPostDate(iso: string) {
+  try {
+    return new Intl.DateTimeFormat("es-MX", {
+      dateStyle: "medium",
+      timeStyle: "short",
+    }).format(new Date(iso));
+  } catch {
+    return "Sin fecha";
+  }
+}
+
+function EmptyCommunityState({ text }: { text: string }) {
+  return (
+    <p className="rounded-2xl border border-dashed p-4 text-sm" style={{ borderColor: TOKENS.color.line, color: TOKENS.color.inkSoft }}>
+      {text}
+    </p>
+  );
+}
+
+function buildHistoryCategoryOptions(posts: CommunityPost[]): CategoryOption[] {
+  const categoriesMap = new Map<string, string>();
+  for (const post of posts) {
+    const normalized = sanitizeCommunityText(post.category || "").trim();
+    if (!normalized) continue;
+    const value = normalized.toLowerCase();
+    if (!categoriesMap.has(value)) {
+      categoriesMap.set(value, normalized);
+    }
+  }
+
+  return [
+    { value: HISTORY_FILTER_ALL, label: "Todos" },
+    ...Array.from(categoriesMap.entries())
+      .sort((a, b) => a[1].localeCompare(b[1], "es"))
+      .map(([value, label]) => ({ value, label })),
+  ];
+}
+
+function filterByHistoryCategory(posts: CommunityPost[], filterValue: string) {
+  if (filterValue === HISTORY_FILTER_ALL) return posts;
+  return posts.filter((item) => normalizeCategory(item.category || "").toLowerCase() === filterValue);
+}
+
+function normalizeCategory(category: string) {
+  const normalized = sanitizeCommunityText(category).trim();
+  return normalized.slice(0, MAX_CATEGORY_LENGTH);
+}
+
+function buildCooldownDefaults() {
+  return { comment: 0, history: 0 } as const;
+}
+
+function emptyValidationErrors(): FieldValidationErrors {
+  return { displayName: "", email: "", content: "", category: "", website: "", submit: "" };
+}
+
+function getCooldownStorageValue() {
+  if (typeof window === "undefined") return buildCooldownDefaults();
+  try {
+    const raw = window.localStorage.getItem(COMMUNITY_COOLDOWN_STORAGE_KEY);
+    if (!raw) return buildCooldownDefaults();
+    const parsed = JSON.parse(raw);
+    const now = Date.now();
+    return {
+      comment: Number.isFinite(Number(parsed?.comment))
+        ? Math.max(0, Math.floor((Number(parsed.comment) - now) / 1000))
+        : 0,
+      history: Number.isFinite(Number(parsed?.history))
+        ? Math.max(0, Math.floor((Number(parsed.history) - now) / 1000))
+        : 0,
+    };
+  } catch {
+    return buildCooldownDefaults();
+  }
+}
+
+function validateCommunityForm(form: CommunityFormState, kind: "comment" | "history") {
+  const errors = emptyValidationErrors();
+  const displayName = sanitizeCommunityText(form.displayName).slice(0, MAX_NAME_LENGTH).trim();
+  const email = sanitizeCommunityText(form.email).slice(0, MAX_EMAIL_LENGTH).trim();
+  const content = sanitizeCommunityText(form.content).slice(0, MAX_COMMENT_MESSAGE_LENGTH).trim();
+  const category = kind === "history" ? normalizeCategory(form.category) : "";
+
+  if (form.website.trim()) {
+    errors.submit = "Envio bloqueado por protección anti-spam.";
+  }
+  if (!displayName) {
+    errors.displayName = "El nombre o alias es obligatorio.";
+  } else if (displayName.length < 2) {
+    errors.displayName = "Usa al menos 2 caracteres.";
+  }
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    errors.email = "Correo no válido.";
+  }
+  if (!content) {
+    errors.content = "El mensaje es obligatorio.";
+  } else if (content.length < MIN_MESSAGE_LENGTH) {
+    errors.content = `Escribe al menos ${MIN_MESSAGE_LENGTH} caracteres para hacerlo útil.`;
+  } else if (content.length > MAX_COMMENT_MESSAGE_LENGTH) {
+    errors.content = `Máximo ${MAX_COMMENT_MESSAGE_LENGTH} caracteres.`;
+  }
+  if (kind === "history" && form.category && !category) {
+    errors.category = "Tema inválido. Ajusta el texto o déjalo vacío.";
+  }
+
+  const hasErrors = Object.values(errors).some(Boolean);
+  return { hasErrors, errors, payload: { displayName, email, content, category } };
+}
+
+function buildContactMailto(baseEmail: string, topic: string) {
+  return `mailto:${baseEmail}?subject=${encodeURIComponent(topic)}`;
+}
+
 // Main App
 export default function MicrositioAcosoVecinal2026() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -363,6 +536,27 @@ export default function MicrositioAcosoVecinal2026() {
   const [copied, setCopied] = useState(false);
   const copyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const scrollRafRef = useRef<number | null>(null);
+  const isMountedRef = useRef(true);
+  const [pdfDownloadState, setPdfDownloadState] = useState<Record<string, PdfDownloadState>>(
+    () => Object.fromEntries(PDF_RESOURCES.map((resource) => [resource.id, { status: "idle" }]))
+  );
+  const [communityLoading, setCommunityLoading] = useState(false);
+  const [comments, setComments] = useState<CommunityPost[]>([]);
+  const [histories, setHistories] = useState<CommunityPost[]>([]);
+  const [commentForm, setCommentForm] = useState<CommunityFormState>({ displayName: "", email: "", content: "", category: "", website: "" });
+  const [historyForm, setHistoryForm] = useState<CommunityFormState>({ displayName: "", email: "", content: "", category: "", website: "" });
+  const [historyFilter, setHistoryFilter] = useState(HISTORY_FILTER_ALL);
+  const [commentSubmitState, setCommentSubmitState] = useState<CommunityRequestState>({ kind: "idle", message: "" });
+  const [historySubmitState, setHistorySubmitState] = useState<CommunityRequestState>({ kind: "idle", message: "" });
+  const [commentValidationErrors, setCommentValidationErrors] = useState<FieldValidationErrors>(emptyValidationErrors());
+  const [historyValidationErrors, setHistoryValidationErrors] = useState<FieldValidationErrors>(emptyValidationErrors());
+  const [commentCooldownLeft, setCommentCooldownLeft] = useState(0);
+  const [historyCooldownLeft, setHistoryCooldownLeft] = useState(0);
+  const [generalCommunityError, setGeneralCommunityError] = useState("");
+  const commentStatusTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const historyStatusTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const cooldownIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [socialAuthMessage, setSocialAuthMessage] = useState("");
 
   // Scroll spy & Progress setup
   const observer = useRef<IntersectionObserver | null>(null);
@@ -410,6 +604,7 @@ export default function MicrositioAcosoVecinal2026() {
   const copyToClipboard = async (text: string) => {
     try {
       await navigator.clipboard.writeText(text);
+      if (!isMountedRef.current) return;
       if (copyTimeoutRef.current) {
         window.clearTimeout(copyTimeoutRef.current);
         copyTimeoutRef.current = null;
@@ -422,7 +617,193 @@ export default function MicrositioAcosoVecinal2026() {
   };
 
   useEffect(() => {
+    const controller = new AbortController();
+    const { signal } = controller;
+    const checkAvailability = async () => {
+      if (!isMountedRef.current) return;
+      setPdfDownloadState((prev) => {
+        const next: Record<string, PdfDownloadState> = { ...prev };
+        PDF_RESOURCES.forEach((resource) => {
+          next[resource.id] = { status: "checking" };
+        });
+        return next;
+      });
+
+      const results = await Promise.all(
+        PDF_RESOURCES.map(async (resource) => {
+          try {
+            const response = await fetch(normalizePdfHref(resource.href), { method: "HEAD", signal });
+            if (!response.ok) {
+              return { id: resource.id, status: "missing" as const, message: `No disponible (${response.status})` };
+            }
+            const sizeHeader = response.headers.get("content-length");
+            const rawSize = sizeHeader ? Number.parseInt(sizeHeader, 10) : Number.NaN;
+            const sizeLabel =
+              Number.isFinite(rawSize) && rawSize > 0
+                ? `${Math.max(1, Math.round((rawSize / 1024 / 1024) * 10) / 10)} MB`
+                : undefined;
+            return {
+              id: resource.id,
+              status: "ok" as const,
+              message: "Disponible",
+              sizeLabel,
+            };
+          } catch {
+            if (signal.aborted) return { id: resource.id, status: "checking" as const };
+            return { id: resource.id, status: "error" as const, message: "No se pudo verificar la descarga" };
+          }
+        })
+      );
+
+      setPdfDownloadState((prev) => {
+        if (!isMountedRef.current) return prev;
+        const next = { ...prev };
+        results.forEach((result) => {
+          if (result.status === "checking") return;
+          next[result.id] = { status: result.status, message: result.message };
+          if (result.status === "ok" && result.sizeLabel) {
+            next[result.id].sizeLabel = result.sizeLabel;
+          }
+        });
+        return next;
+      });
+    };
+
+    checkAvailability();
     return () => {
+      controller.abort();
+    };
+  }, []);
+
+  const loadCommunity = async () => {
+    if (!isMountedRef.current) return;
+    setCommunityLoading(true);
+    setGeneralCommunityError("");
+    try {
+      const [loadedComments, loadedHistory] = await Promise.all([
+        fetchCommunityPosts("comment", 20),
+        fetchCommunityPosts("history", 20),
+      ]);
+      if (!isMountedRef.current) return;
+      setComments(loadedComments.filter((item) => item.approved));
+      setHistories(loadedHistory.filter((item) => item.approved));
+    } catch (error) {
+      if (!isMountedRef.current) return;
+      console.error("Error cargando comunidad", error);
+      setGeneralCommunityError("No se pudo cargar los contenidos comunitarios por ahora.");
+    } finally {
+      if (isMountedRef.current) setCommunityLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadCommunity();
+  }, []);
+
+  const setCooldownFromStorage = () => {
+    const values = getCooldownStorageValue();
+    setCommentCooldownLeft(values.comment);
+    setHistoryCooldownLeft(values.history);
+  };
+
+  const updateFormText = (
+    setter: React.Dispatch<React.SetStateAction<CommunityFormState>>,
+    field: keyof CommunityFormState,
+    value: string,
+    limit: number
+  ) => {
+    const sanitized = sanitizeCommunityText(value).slice(0, limit);
+    setter((prev) => ({ ...prev, [field]: sanitized }));
+  };
+
+  const submitForm = async (
+    kind: "comment" | "history",
+    form: CommunityFormState,
+    setForm: React.Dispatch<React.SetStateAction<CommunityFormState>>,
+    setSubmitState: React.Dispatch<React.SetStateAction<CommunityRequestState>>
+  ) => {
+    const setErrors = kind === "comment" ? setCommentValidationErrors : setHistoryValidationErrors;
+    const cooldownLeft = kind === "comment" ? commentCooldownLeft : historyCooldownLeft;
+
+    if (cooldownLeft > 0) {
+      setSubmitState({ kind: "error", message: `Espera ${cooldownLeft} segundos antes de publicar otro.` });
+      return;
+    }
+
+    const validation = validateCommunityForm(form, kind);
+    if (validation.hasErrors) {
+      setErrors(validation.errors);
+      setSubmitState({ kind: "error", message: validation.errors.submit || "Revisa los campos marcados." });
+      return;
+    }
+    setErrors(emptyValidationErrors());
+
+    setSubmitState({ kind: "loading", message: "Enviando..." });
+    try {
+      await submitCommunityPost({
+        kind,
+        displayName: validation.payload.displayName,
+        email: validation.payload.email,
+        content: validation.payload.content,
+        category: validation.payload.category,
+        website: form.website,
+      });
+      setForm({ displayName: "", email: "", content: "", category: "", website: "" });
+      const until = Date.now() + COMMUNITY_COOLDOWN_SECONDS * 1000;
+      const current = (() => {
+        try {
+          const raw = window.localStorage.getItem(COMMUNITY_COOLDOWN_STORAGE_KEY);
+          return raw ? (JSON.parse(raw) as { comment?: number; history?: number }) : {};
+        } catch {
+          return {};
+        }
+      })();
+      if (typeof window !== "undefined") {
+        window.localStorage.setItem(
+          COMMUNITY_COOLDOWN_STORAGE_KEY,
+          JSON.stringify({ ...current, [kind]: until })
+        );
+      }
+      setCooldownFromStorage();
+      setSubmitState({ kind: "success", message: kind === "comment" ? "Comentario enviado." : "Historial compartido." });
+      await loadCommunity();
+      const resetTimeout = window.setTimeout(() => {
+        if (isMountedRef.current) setSubmitState({ kind: "idle", message: "" });
+      }, 2800);
+      if (kind === "comment") {
+        if (commentStatusTimeoutRef.current) window.clearTimeout(commentStatusTimeoutRef.current);
+        commentStatusTimeoutRef.current = resetTimeout;
+      } else {
+        if (historyStatusTimeoutRef.current) window.clearTimeout(historyStatusTimeoutRef.current);
+        historyStatusTimeoutRef.current = resetTimeout;
+      }
+    } catch (error) {
+      if (!isMountedRef.current) return;
+      console.error("Error al enviar", error);
+      const message = error instanceof Error ? error.message : "No fue posible enviar. Intenta de nuevo.";
+      setSubmitState({ kind: "error", message });
+    }
+  };
+
+  const submitComment = async (event: React.FormEvent) => {
+    event.preventDefault();
+    await submitForm("comment", commentForm, setCommentForm, setCommentSubmitState);
+  };
+
+  const submitHistory = async (event: React.FormEvent) => {
+    event.preventDefault();
+    await submitForm("history", historyForm, setHistoryForm, setHistorySubmitState);
+  };
+
+  const historyCategories = buildHistoryCategoryOptions(histories);
+  const filteredHistories = filterByHistoryCategory(histories, historyFilter);
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    setCooldownFromStorage();
+    cooldownIntervalRef.current = window.setInterval(setCooldownFromStorage, 1000);
+    return () => {
+      isMountedRef.current = false;
       if (copyTimeoutRef.current) {
         window.clearTimeout(copyTimeoutRef.current);
         copyTimeoutRef.current = null;
@@ -431,35 +812,89 @@ export default function MicrositioAcosoVecinal2026() {
         window.cancelAnimationFrame(scrollRafRef.current);
         scrollRafRef.current = null;
       }
+      if (commentStatusTimeoutRef.current) {
+        window.clearTimeout(commentStatusTimeoutRef.current);
+        commentStatusTimeoutRef.current = null;
+      }
+      if (historyStatusTimeoutRef.current) {
+        window.clearTimeout(historyStatusTimeoutRef.current);
+        historyStatusTimeoutRef.current = null;
+      }
+      if (cooldownIntervalRef.current) {
+        window.clearInterval(cooldownIntervalRef.current);
+        cooldownIntervalRef.current = null;
+      }
     };
   }, []);
 
-  const downloadEscrito = (text: string) => {
-    const blob = new Blob([text], { type: "text/plain" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "denuncia_acoso_vecinal.txt";
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  };
 
-  const downloadPdf = (resource: PdfResource) => {
+  const downloadPdf = async (resource: PdfResource) => {
+    const state = pdfDownloadState[resource.id];
     const href = new URL(normalizePdfHref(resource.href), window.location.origin).toString();
+    const anchorProbe = document.createElement("a");
+    const supportsDownload = "download" in anchorProbe;
+
+    if (state?.status === "missing") {
+      setPdfDownloadState((prev) => ({
+        ...prev,
+        [resource.id]: {
+          status: "missing",
+          message: "Documento aún no disponible, intenta abrir en nueva pestaña.",
+        },
+      }));
+      window.open(href, "_blank", "noopener");
+      return;
+    }
+
+    if (state?.status === "error") {
+      setPdfDownloadState((prev) => ({
+        ...prev,
+        [resource.id]: {
+          status: "error",
+          message: "Si la descarga no funciona, usa abrir para descargar desde navegador.",
+        },
+      }));
+      window.open(href, "_blank", "noopener");
+      return;
+    }
+
     try {
+      if (state?.status !== "ok") {
+        const response = await fetch(href, { method: "HEAD" });
+        if (!response.ok) {
+          setPdfDownloadState((prev) => ({
+            ...prev,
+            [resource.id]: {
+              status: "missing",
+              message: `No disponible (${response.status})`,
+            },
+          }));
+          window.open(href, "_blank", "noopener");
+          return;
+        }
+      }
+
       const link = document.createElement("a");
       link.href = href;
-      link.download = resource.fileName;
+      if (supportsDownload) {
+        link.download = resource.fileName;
+      }
       link.rel = "noopener";
       link.style.display = "none";
       link.ariaLabel = `Descargar ${resource.title}`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+      setPdfDownloadState((prev) => ({ ...prev, [resource.id]: { status: "ok", message: "Descarga iniciada." } }));
     } catch (err) {
       console.error("Error descargando PDF", err);
+      setPdfDownloadState((prev) => ({
+        ...prev,
+        [resource.id]: {
+          status: "error",
+          message: "No se pudo iniciar la descarga automática. Abre el documento en pestaña nueva.",
+        },
+      }));
       window.open(href, "_blank", "noopener");
     }
   };
@@ -485,118 +920,37 @@ export default function MicrositioAcosoVecinal2026() {
         * { box-sizing: border-box; }
         ::selection { background: rgba(201,94,42,.18); }
         .print-anchor { display: inline-flex; align-items: center; }
-
-        @media print {
-          @page {
-            margin: 2cm;
-            size: letter;
-          }
-
-          * {
-            -webkit-print-color-adjust: exact;
-            print-color-adjust: exact;
-          }
-          
-          body {
-            background: #f6efe3 !important;
-            color: black !important;
-            font-size: 11pt;
-          }
-
-          nav, .print-hide, .framer-motion-container {
-            display: none !important;
-          }
-
-          .print-document {
-            width: 100% !important;
-            max-width: 100% !important;
-            margin: 0 !important;
-            padding: 0 !important;
-          }
-
-          .print-document section {
-            font-size: 10.8pt;
-            page-break-inside: auto;
-            break-inside: auto;
-            border-top: 1px solid #ddd !important;
-            padding-top: 2cm !important;
-            margin-top: 1cm !important;
-          }
-
-          h1, h2, h3 {
-            page-break-after: avoid;
-            page-break-before: avoid;
-            color: #18120e !important;
-          }
-
-          h4, h5, p, ul, ol, li, blockquote {
-            page-break-inside: avoid;
-          }
-
-          p, div {
-            color: #2b2219 !important;
-          }
-
-          a {
-            text-decoration: none;
-            color: #8f2f1c !important;
-          }
-          
-          a[href^="http"]:after {
-            content: " (" attr(href) ")";
-            font-size: 0.85em;
-            font-style: italic;
-          }
-
-          .rounded-\[34px\], .rounded-\[28px\], .rounded-\[20px\], .rounded-\[30px\], .rounded-\[40px\] {
-            border: 1px solid #ccc !important;
-            box-shadow: none !important;
-            background: #fffaf3 !important;
-            print-color-adjust: exact;
-            break-inside: avoid;
-          }
-
-          .rounded-\[34px\] .text-[13px],
-          .rounded-\[28px\] .text-\[11px\] {
-            color: #42342b !important;
-          }
-        }
       `}</style>
 
       {/* Fixed Navigation */}
-      <nav className="fixed top-0 left-0 right-0 z-50 border-b backdrop-blur-md" style={{ background: "rgba(246,239,227,0.92)", borderColor: TOKENS.color.line }}>
+      <nav className="fixed top-0 left-0 right-0 z-50 border-b" style={{ background: "rgba(246,239,227,0.97)", borderColor: TOKENS.color.line, backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)" }}>
         {/* Progress bar */}
         <div className="absolute top-0 left-0 h-[3px] bg-gradient-to-r from-[#c95e2a] to-[#8f2f1c] z-50" style={{ width: `${readProgress * 100}%`, transition: 'width 0.1s ease-out' }} />
         <div className="mx-auto max-w-[1440px] px-4 md:px-6">
-          <div className="flex h-16 items-center justify-between">
+          <div className="flex h-14 items-center justify-between">
             <button
               onClick={() => scrollToSection("portada")}
-              className="text-lg font-black tracking-tight"
+              className="text-base font-black tracking-tight whitespace-nowrap"
               style={{ fontFamily: TOKENS.font.display }}
             >
-              <span style={{ color: TOKENS.color.ink }}>Gaceta Tu Espacio </span>
+              <span style={{ color: TOKENS.color.ink }}>Gaceta </span>
               <span style={{ color: TOKENS.color.warm }}>Eje Central</span>
             </button>
 
-            {/* Desktop Navigation */}
-            <div className="hidden lg:flex items-center gap-1">
-              {sectionMeta.map(({ id, label, icon: Icon }, index) => {
-                const romanNumerals = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII'];
-                return (
-                  <button
-                    key={id}
-                    onClick={() => scrollToSection(id)}
-                    className="flex items-center gap-2 px-3 py-2 rounded-full text-sm transition-all"
-                    style={{
-                      color: activeSection === id ? TOKENS.color.warm : TOKENS.color.inkSoft,
-                      background: activeSection === id ? "rgba(201,94,42,0.1)" : "transparent"
-                    }}
-                  >
-                    <span className="text-[10px] font-bold tracking-widest opacity-60 w-4 text-center">{romanNumerals[index]}</span>
-                    {label}
-                  </button>
-                )
-              })}
+            <div className="hidden lg:flex items-center gap-0.5">
+              {sectionMeta.slice(0, 9).map(({ id, label }) => (
+                <button
+                  key={id}
+                  onClick={() => scrollToSection(id)}
+                  className="px-2.5 py-1.5 rounded-full text-[13px] font-medium transition-all whitespace-nowrap"
+                  style={{
+                    color: activeSection === id ? TOKENS.color.warm : TOKENS.color.inkSoft,
+                    background: activeSection === id ? "rgba(201,94,42,0.1)" : "transparent"
+                  }}
+                >
+                  {label}
+                </button>
+              ))}
               <button
                 onClick={handlePrint}
                 className="ml-2 flex flex-col items-center justify-center p-2 rounded-full hover:bg-black/5 transition-colors print-hide"
@@ -863,7 +1217,7 @@ export default function MicrositioAcosoVecinal2026() {
                   <div className="text-[11px] font-semibold uppercase tracking-[0.28em]" style={{ color: TOKENS.color.sand }}>Cómo escala el conflicto</div>
                 </div>
                 <div className="grid gap-4 md:grid-cols-5">
-              {TIMELINE.map((item, i) => (
+                  {TIMELINE.map((item, i) => (
                     <motion.div
                       key={i}
                       initial={{ opacity: 0, y: 20 }}
@@ -1292,7 +1646,7 @@ export default function MicrositioAcosoVecinal2026() {
                     variant="outline"
                     size="sm"
                     className="rounded-full text-xs"
-                  onClick={() => copyToClipboard(DENUNCIA_ESCRITO)}
+                    onClick={() => copyToClipboard(DENUNCIA_ESCRITO)}
                   >
                     <FileText className="h-3.5 w-3.5 mr-2" />
                     Copiar texto
@@ -1412,7 +1766,7 @@ export default function MicrositioAcosoVecinal2026() {
                   event.preventDefault();
                   downloadPdf(resource);
                 }}
-                className="group flex flex-col bg-white rounded-3xl p-8 text-left transition-all hover:-translate-y-1 hover:shadow-xl print-anchor"
+                className="group flex flex-col bg-white rounded-3xl p-8 text-left transition-all hover:-translate-y-1 hover:shadow-xl print-anchor print-avoid"
                 rel="noopener"
                 aria-label={`Descargar ${resource.title}`}
                 style={{ boxShadow: TOKENS.shadow.soft }}
@@ -1430,8 +1784,382 @@ export default function MicrositioAcosoVecinal2026() {
                   <span>Descargar PDF</span>
                   <ChevronRight className="ml-1 h-4 w-4 transition-transform group-hover:translate-x-1" />
                 </div>
+                {pdfDownloadState[resource.id]?.message && (
+                  <p className="mt-4 text-xs" style={{ color: TOKENS.color.inkSoft }}>
+                    {pdfDownloadState[resource.id]?.message}
+                    {pdfDownloadState[resource.id]?.sizeLabel && ` · ${pdfDownloadState[resource.id]?.sizeLabel}`}
+                  </p>
+                )}
               </a>
             ))}
+          </div>
+        </section>
+
+        <MediaGallerySection />
+
+        <section id="comentarios" className="border-t" style={{ borderColor: TOKENS.color.line, ...paperStyle(false), ...TOKENS.sectionPad }}>
+          <div className="mx-auto max-w-[1440px] px-4 md:px-6">
+            <div className="mb-8">
+              <Eyebrow>09 · Comentarios</Eyebrow>
+              <h2 className="text-[clamp(2rem, 4vw, 3.5rem)] font-black tracking-tight" style={{ fontFamily: TOKENS.font.display, color: TOKENS.color.ink }}>
+                Comentarios de comunidad
+              </h2>
+              <p className="mt-4 max-w-3xl text-lg leading-8" style={{ color: TOKENS.color.inkSoft, fontFamily: TOKENS.font.editorial }}>
+                Comparte experiencias, dudas o señales de apoyo. Los mensajes contribuyen a construir un archivo vivo.
+              </p>
+            </div>
+
+            <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
+              <form onSubmit={submitComment} className="rounded-[32px] border p-6 md:p-7 print-hide-form" style={{ background: "rgba(255,255,255,0.82)", border: TOKENS.cardBorder, boxShadow: TOKENS.shadow.soft }}>
+                <h3 className="text-xl font-black mb-4" style={{ fontFamily: TOKENS.font.display }}>Déjanos tu mensaje</h3>
+                <p className="mb-4 text-sm" style={{ color: TOKENS.color.inkSoft }}>
+                  Tu aportación se publica con verificación automática y ayuda a construir una guía viva con casos reales.
+                  En caso de caídas del servicio, se mantiene un respaldo local.
+                </p>
+                <div className="my-4 rounded-[20px] border p-4" style={{ borderColor: TOKENS.color.line, background: "rgba(255,255,255,0.7)" }}>
+                  <p className="mb-3 text-sm" style={{ color: TOKENS.color.inkSoft }}>
+                    Si prefieres, usa autenticación social para asociar tu identidad al envío y reducir ruido de spam.
+                  </p>
+                  <SocialAuthButtons
+                    onMessage={setSocialAuthMessage}
+                    onProviderSelected={(provider) => {
+                      setSocialAuthMessage(
+                        `Autenticación iniciada con ${provider === "x" ? "X" : provider === "facebook" ? "Facebook" : "TikTok"
+                        }.`
+                      );
+                    }}
+                  />
+                  {socialAuthMessage && (
+                    <p
+                      className="mt-3 rounded-full border px-3 py-1 text-xs"
+                      style={{ borderColor: "rgba(38,26,18,0.16)", color: TOKENS.color.inkSoft }}
+                    >
+                      {socialAuthMessage}
+                    </p>
+                  )}
+                </div>
+                <div className="grid gap-4">
+                  <label className="space-y-1">
+                    <div className="flex justify-between gap-2">
+                      <span className="text-sm font-semibold" style={{ color: TOKENS.color.ink }}>Nombre o alias</span>
+                      <span className="text-xs" style={{ color: TOKENS.color.inkSoft }}>{commentForm.displayName.length}/{MAX_NAME_LENGTH}</span>
+                    </div>
+                    <input
+                      value={commentForm.displayName}
+                      onChange={(event) => updateFormText(setCommentForm, "displayName", event.target.value, MAX_NAME_LENGTH)}
+                      className="w-full rounded-xl border px-3 py-2"
+                      placeholder="Ej. Ana G."
+                      maxLength={MAX_NAME_LENGTH}
+                      required
+                    />
+                    {commentValidationErrors.displayName && (
+                      <span className="text-xs text-[#b91c1c]">{commentValidationErrors.displayName}</span>
+                    )}
+                  </label>
+                  <label className="space-y-1">
+                    <div className="flex justify-between gap-2">
+                      <span className="text-sm font-semibold" style={{ color: TOKENS.color.ink }}>Correo (opcional)</span>
+                      <span className="text-xs" style={{ color: TOKENS.color.inkSoft }}>{commentForm.email.length}/{MAX_EMAIL_LENGTH}</span>
+                    </div>
+                    <input
+                      value={commentForm.email}
+                      onChange={(event) => updateFormText(setCommentForm, "email", event.target.value, MAX_EMAIL_LENGTH)}
+                      type="email"
+                      className="w-full rounded-xl border px-3 py-2"
+                      placeholder="nombre@correo.com"
+                      maxLength={MAX_EMAIL_LENGTH}
+                    />
+                    {commentValidationErrors.email && <span className="text-xs text-[#b91c1c]">{commentValidationErrors.email}</span>}
+                  </label>
+                  <div className="sr-only">
+                    <input
+                      aria-hidden="true"
+                      tabIndex={-1}
+                      autoComplete="off"
+                      placeholder="No completar"
+                      value={commentForm.website}
+                      onChange={(event) => updateFormText(setCommentForm, "website", event.target.value, MAX_WEBSITE_LENGTH)}
+                      className="rounded-xl border px-3 py-2"
+                    />
+                  </div>
+                  <label className="space-y-1">
+                    <div className="flex justify-between gap-2">
+                      <span className="text-sm font-semibold" style={{ color: TOKENS.color.ink }}>Mensaje</span>
+                      <span className="text-xs" style={{ color: TOKENS.color.inkSoft }}>
+                        {commentForm.content.length}/{MAX_COMMENT_MESSAGE_LENGTH}
+                      </span>
+                    </div>
+                    <textarea
+                      value={commentForm.content}
+                      onChange={(event) => updateFormText(setCommentForm, "content", event.target.value, MAX_COMMENT_MESSAGE_LENGTH)}
+                      rows={5}
+                      className="w-full rounded-xl border px-3 py-2"
+                      placeholder="Qué parte te fue útil y qué falta fortalecer."
+                      maxLength={MAX_COMMENT_MESSAGE_LENGTH}
+                      required
+                    />
+                    {commentValidationErrors.content && <span className="text-xs text-[#b91c1c]">{commentValidationErrors.content}</span>}
+                  </label>
+                  <Button
+                    type="submit"
+                    className="rounded-full w-full"
+                    disabled={commentSubmitState.kind === "loading" || commentCooldownLeft > 0}
+                  >
+                    {commentSubmitState.kind === "loading"
+                      ? "Enviando..."
+                      : commentCooldownLeft > 0
+                        ? `Espera ${commentCooldownLeft}s`
+                        : "Publicar comentario"}
+                  </Button>
+                  {commentSubmitState.message && (
+                    <p className="text-sm" role="status" style={{ color: commentSubmitState.kind === "error" ? "#b91c1c" : TOKENS.color.warm }}>
+                      {commentSubmitState.message}
+                    </p>
+                  )}
+                  {commentValidationErrors.submit && <p className="text-sm text-[#b91c1c]">{commentValidationErrors.submit}</p>}
+                </div>
+              </form>
+
+              <div className="rounded-[32px] border p-6 md:p-7 print-avoid" style={{ background: "rgba(255,255,255,0.72)", border: TOKENS.cardBorder, boxShadow: TOKENS.shadow.soft }}>
+                <div className="mb-4 flex items-center justify-between">
+                  <h3 className="text-xl font-black" style={{ fontFamily: TOKENS.font.display }}>Últimos comentarios</h3>
+                  {communityLoading && <span className="text-sm" style={{ color: TOKENS.color.warm }}>Cargando…</span>}
+                </div>
+                {generalCommunityError && <p className="mb-4 text-sm text-red-700">{generalCommunityError}</p>}
+                <div className="space-y-3">
+                  <div className="mb-3 flex items-center justify-between">
+                    <span className="text-sm" style={{ color: TOKENS.color.inkSoft }}>
+                      Últimos aprobados: {comments.length}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => void loadCommunity()}
+                      className="rounded-full border px-3 py-1 text-xs"
+                      style={{ borderColor: TOKENS.color.line, background: "rgba(255,255,255,0.66)" }}
+                      disabled={communityLoading}
+                    >
+                      {communityLoading ? "Actualizando..." : "Actualizar feed"}
+                    </button>
+                  </div>
+                  {comments.length === 0 ? (
+                    <EmptyCommunityState text="Aún no hay comentarios. Sé el primero en compartir una experiencia." />
+                  ) : (
+                    comments.map((item) => (
+                      <article key={item.id} className="rounded-[20px] border p-4" style={{ borderColor: TOKENS.color.line, background: "rgba(255,255,255,0.88)" }}>
+                        <div className="mb-2 flex items-center justify-between text-xs" style={{ color: TOKENS.color.inkSoft }}>
+                          <span className="font-semibold" style={{ color: TOKENS.color.ink }}>{item.displayName}</span>
+                          <span>{formatPostDate(item.createdAt)}</span>
+                        </div>
+                        {item.source === "local" && (
+                          <p className="mb-2 text-[11px] font-semibold" style={{ color: TOKENS.color.warm }}>
+                            Guardado localmente (visible sin respaldo remoto)
+                          </p>
+                        )}
+                        <p className="text-sm leading-6" style={{ color: TOKENS.color.inkSoft }}>{item.content}</p>
+                      </article>
+                    ))
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="historial" className="border-t" style={{ borderColor: TOKENS.color.line, ...paperStyle(false), ...TOKENS.sectionPad }}>
+          <div className="mx-auto max-w-[1440px] px-4 md:px-6">
+            <div className="mb-8">
+              <Eyebrow>10 · Historial comunitario</Eyebrow>
+              <h2 className="text-[clamp(2rem, 4vw, 3.5rem)] font-black tracking-tight" style={{ fontFamily: TOKENS.font.display, color: TOKENS.color.ink }}>
+                Historia compartida
+              </h2>
+              <p className="mt-4 max-w-3xl text-lg leading-8" style={{ color: TOKENS.color.inkSoft, fontFamily: TOKENS.font.editorial }}>
+                Sube experiencias útiles o recomendaciones para fortalecer la ruta común.
+              </p>
+            </div>
+
+            <form onSubmit={submitHistory} className="mb-6 rounded-[32px] border p-6 md:p-7 print-hide-form" style={{ background: "rgba(255,255,255,0.82)", border: TOKENS.cardBorder, boxShadow: TOKENS.shadow.soft }}>
+              <h3 className="mb-4 text-xl font-black" style={{ fontFamily: TOKENS.font.display }}>Añadir aporte al historial</h3>
+              <p className="mb-4 text-sm" style={{ color: TOKENS.color.inkSoft }}>
+                Registra rutas de trabajo, documentos útiles o aprendizajes colectivos para fortalecer el historial.
+              </p>
+              <div className="grid gap-4 md:grid-cols-2">
+                <label className="space-y-1 md:col-span-1">
+                  <div className="flex justify-between gap-2">
+                    <span className="text-sm font-semibold" style={{ color: TOKENS.color.ink }}>Nombre o alias</span>
+                    <span className="text-xs" style={{ color: TOKENS.color.inkSoft }}>{historyForm.displayName.length}/{MAX_NAME_LENGTH}</span>
+                  </div>
+                  <input
+                    value={historyForm.displayName}
+                    onChange={(event) => updateFormText(setHistoryForm, "displayName", event.target.value, MAX_NAME_LENGTH)}
+                    className="w-full rounded-xl border px-3 py-2"
+                    placeholder="Ej. Colectivo A."
+                    maxLength={MAX_NAME_LENGTH}
+                    required
+                  />
+                  {historyValidationErrors.displayName && (
+                    <span className="text-xs text-[#b91c1c]">{historyValidationErrors.displayName}</span>
+                  )}
+                </label>
+                <label className="space-y-1">
+                  <div className="flex justify-between gap-2">
+                    <span className="text-sm font-semibold" style={{ color: TOKENS.color.ink }}>Correo (opcional)</span>
+                    <span className="text-xs" style={{ color: TOKENS.color.inkSoft }}>{historyForm.email.length}/{MAX_EMAIL_LENGTH}</span>
+                  </div>
+                  <input
+                    value={historyForm.email}
+                    onChange={(event) => updateFormText(setHistoryForm, "email", event.target.value, MAX_EMAIL_LENGTH)}
+                    type="email"
+                    className="w-full rounded-xl border px-3 py-2"
+                    placeholder="nombre@correo.com"
+                    maxLength={MAX_EMAIL_LENGTH}
+                  />
+                  {historyValidationErrors.email && <span className="text-xs text-[#b91c1c]">{historyValidationErrors.email}</span>}
+                </label>
+                <div className="sr-only">
+                  <input
+                    aria-hidden="true"
+                    tabIndex={-1}
+                    autoComplete="off"
+                    placeholder="No completar"
+                    value={historyForm.website}
+                    onChange={(event) => updateFormText(setHistoryForm, "website", event.target.value, MAX_WEBSITE_LENGTH)}
+                    className="rounded-xl border px-3 py-2"
+                  />
+                </div>
+                <label className="space-y-1 md:col-span-2">
+                  <div className="flex justify-between gap-2">
+                    <span className="text-sm font-semibold" style={{ color: TOKENS.color.ink }}>Tema</span>
+                    <span className="text-xs" style={{ color: TOKENS.color.inkSoft }}>{historyForm.category.length}/{MAX_CATEGORY_LENGTH}</span>
+                  </div>
+                  <input
+                    value={historyForm.category}
+                    onChange={(event) => updateFormText(setHistoryForm, "category", event.target.value, MAX_CATEGORY_LENGTH)}
+                    className="w-full rounded-xl border px-3 py-2"
+                    placeholder="Ej. Testimonio · Ruta legal"
+                    maxLength={MAX_CATEGORY_LENGTH}
+                  />
+                  {historyValidationErrors.category && <span className="text-xs text-[#b91c1c]">{historyValidationErrors.category}</span>}
+                </label>
+                <label className="space-y-1 md:col-span-2">
+                  <div className="flex justify-between gap-2">
+                    <span className="text-sm font-semibold" style={{ color: TOKENS.color.ink }}>Aporte</span>
+                    <span className="text-xs" style={{ color: TOKENS.color.inkSoft }}>{historyForm.content.length}/{MAX_COMMENT_MESSAGE_LENGTH}</span>
+                  </div>
+                  <textarea
+                    value={historyForm.content}
+                    onChange={(event) => updateFormText(setHistoryForm, "content", event.target.value, MAX_COMMENT_MESSAGE_LENGTH)}
+                    rows={5}
+                    className="w-full rounded-xl border px-3 py-2"
+                    placeholder="Comparte información útil o experiencias de ruta y apoyo."
+                    maxLength={MAX_COMMENT_MESSAGE_LENGTH}
+                    required
+                  />
+                  {historyValidationErrors.content && <span className="text-xs text-[#b91c1c]">{historyValidationErrors.content}</span>}
+                </label>
+              </div>
+              <div className="mt-4 flex items-center gap-3">
+                <Button
+                  type="submit"
+                  className="rounded-full"
+                  disabled={historySubmitState.kind === "loading" || historyCooldownLeft > 0}
+                >
+                  {historySubmitState.kind === "loading"
+                    ? "Enviando..."
+                    : historyCooldownLeft > 0
+                      ? `Espera ${historyCooldownLeft}s`
+                      : "Compartir aporte"}
+                </Button>
+                {historySubmitState.message && (
+                  <span className="text-sm" role="status" style={{ color: historySubmitState.kind === "error" ? "#b91c1c" : TOKENS.color.warm }}>
+                    {historySubmitState.message}
+                  </span>
+                )}
+                {historyValidationErrors.submit && <span className="text-sm text-[#b91c1c]">{historyValidationErrors.submit}</span>}
+              </div>
+            </form>
+
+            <div className="rounded-[32px] border p-6 md:p-7" style={{ background: "rgba(255,255,255,0.72)", border: TOKENS.cardBorder, boxShadow: TOKENS.shadow.soft }}>
+              <div className="mb-4 flex flex-wrap gap-2">
+                {historyCategories.map((category) => (
+                  <button
+                    key={category.value}
+                    onClick={() => setHistoryFilter(category.value)}
+                    className="rounded-full border px-3 py-1 text-sm"
+                    style={{
+                      borderColor: TOKENS.color.line,
+                      background:
+                        historyFilter === category.value ? "rgba(201,94,42,0.16)" : "rgba(255,255,255,0.66)",
+                      color: TOKENS.color.inkSoft,
+                    }}
+                  >
+                    {category.label}
+                  </button>
+                ))}
+              </div>
+              <div className="space-y-3">
+                {filteredHistories.length === 0 ? (
+                  <EmptyCommunityState text="Aún no hay entradas en este filtro. Publica la primera aportación." />
+                ) : (
+                  filteredHistories.map((item) => (
+                    <article key={item.id} className="rounded-[20px] border p-4" style={{ borderColor: TOKENS.color.line, background: "rgba(255,255,255,0.9)" }}>
+                      <div className="mb-2 flex flex-wrap items-center justify-between gap-2 text-xs" style={{ color: TOKENS.color.inkSoft }}>
+                        <span className="font-semibold" style={{ color: TOKENS.color.ink }}>{item.displayName}</span>
+                        {item.source === "local" && (
+                          <span style={{ color: TOKENS.color.warm }}>Guardado localmente</span>
+                        )}
+                        <span>{formatPostDate(item.createdAt)}</span>
+                      </div>
+                      {item.category && <p className="mb-2 text-xs uppercase tracking-[0.12em]" style={{ color: TOKENS.color.warm }}>{item.category}</p>}
+                      <p className="text-sm leading-6" style={{ color: TOKENS.color.inkSoft }}>{item.content}</p>
+                    </article>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <AdminPanelSection />
+
+        <section id="contacto" className="border-t" style={{ borderColor: TOKENS.color.line, ...paperStyle(false), ...TOKENS.sectionPad }}>
+          <div className="mx-auto max-w-[1440px] px-4 md:px-6">
+            <div className="rounded-[32px] p-6 md:p-10" style={{ background: TOKENS.color.paper2, border: TOKENS.cardBorder, boxShadow: TOKENS.shadow.lift }}>
+              <Eyebrow>11 · Contacto y seguimiento</Eyebrow>
+              <h2 className="mt-4 text-[clamp(2rem, 4vw, 3.5rem)] font-black" style={{ fontFamily: TOKENS.font.display, color: TOKENS.color.ink }}>
+                ¿tienes duda o quieres saber más?
+              </h2>
+              <p className="mt-4 text-lg leading-8" style={{ color: TOKENS.color.inkSoft, fontFamily: TOKENS.font.editorial }}>
+                Escríbeme directamente para recibir documentación adicional, reportes o para validar fuentes.
+                También puedes seguir avances y piezas nuevas por canales directos.
+              </p>
+              <div className="mt-7 grid gap-4 md:grid-cols-2">
+                <a
+                  className="rounded-[20px] border p-4 font-semibold transition hover:bg-white print-link-row"
+                  style={{ borderColor: TOKENS.color.line, background: "rgba(255,255,255,0.88)", color: TOKENS.color.warm }}
+                  href={buildContactMailto(CONTACT_DATA.email, "Duda desde la web de Gaceta Tu Espacio")}
+                >
+                  Enviar correo a contacto@yosoy.mx
+                </a>
+                <a
+                  className="rounded-[20px] border p-4 font-semibold transition hover:bg-white print-link-row"
+                  style={{ borderColor: TOKENS.color.line, background: "rgba(255,255,255,0.88)", color: TOKENS.color.warm }}
+                  href={CONTACT_DATA.tiktokUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  TikTok @joseca_npc
+                </a>
+                <a
+                  className="rounded-[20px] border p-4 font-semibold transition hover:bg-white print-link-row"
+                  style={{ borderColor: TOKENS.color.line, background: "rgba(255,255,255,0.88)", color: TOKENS.color.warm }}
+                  href={CONTACT_DATA.site}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Visitar sitio: yosoymx.com
+                </a>
+              </div>
+            </div>
           </div>
         </section>
       </main>

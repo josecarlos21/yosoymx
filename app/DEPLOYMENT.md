@@ -6,7 +6,14 @@
   - `npm ci`
   - `npm run build`
 - Asegurar que no existan artefactos huérfanos rastreables que no pertenezcan a ejecución:
-  - `Home.js`, `Home2`, `app/src/App.css` (ya eliminado), `app/.pnpm-store/`, `app/node_modules/` (no rastreables).
+  - `app/.pnpm-store/`, `app/node_modules/` (no rastreables),
+  - archivos huérfanos del root (`Home.js`, `Home2`) si reaparecen.
+- Mantener un lockfile único:
+  - usa `package-lock.json`.
+  - evita `pnpm-lock.yaml` para no forzar cambios de lockfile ambiguos en CI (`npm ci`).
+- Verificar que exista la ruta de administración:
+  - `app/functions/api/admin/editions.ts`
+  - `app/database/community.sql` con tabla `admin_editions`
 - Si hay cambios de contenido, actualizar `app/info.md` para reflejar estructura real.
 
 ## 2) Subida directa a GitHub
@@ -56,10 +63,11 @@
   - Carga de fuentes y estilos
   - Copia a portapapeles / descarga de escrito
   - Header y CTA principales
+  - `GET /api/admin/editions` requiere token y responde `items` en JSON
 
 ## 5) Riesgos a vigilar
 
 - `node_modules` o `.pnpm-store` rastreados en git (rompen historial y CI).
-- archivos raíz huérfanos (`Home.js`, `Home2`) sin intención de versión.
+- archivos raíz huérfanos (`Home.js`, `Home2`) sin intención de versión (si reaparecen).
 - `info.md` desfasado de la estructura real.
 - Dependencias de lockfile dual (npm/pnpm) sin política explícita.

@@ -73,3 +73,107 @@
     @apply bg-background text-foreground;
   }
 }
+
+@media print {
+  @page {
+    margin: 2cm;
+    size: letter;
+  }
+
+  * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  body {
+    background: #f6efe3 !important;
+    color: #18120e !important;
+    font-size: 11pt;
+  }
+
+  nav,
+  .print-hide,
+  .print-hide-form {
+    display: none !important;
+  }
+
+  #recursos,
+  #comentarios,
+  #historial,
+  #contacto {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .print-document,
+  .print-document section {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    transform: none !important;
+    page-break-inside: avoid;
+  }
+
+  .print-document section {
+    margin-top: 1.1cm !important;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  .print-document * {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .print-document img {
+    max-width: 80% !important;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5 {
+    page-break-after: avoid;
+    page-break-before: avoid;
+    color: #18120e !important;
+  }
+
+  p,
+  div,
+  li,
+  blockquote {
+    page-break-inside: avoid;
+    orphans: 2;
+    widows: 2;
+  }
+
+  a[href]:not([href^="#"]):not([href^="javascript"]):after {
+    content: " (" attr(href) ")";
+    font-size: 0.85em;
+    font-style: italic;
+    word-break: break-all;
+  }
+
+  .print-link-row {
+    display: block !important;
+  }
+
+  .print-link-row[href^="mailto"]:after {
+    content: " (" attr(href) ")";
+  }
+
+  .rounded-\[34px\],
+  .rounded-\[33px\],
+  .rounded-\[32px\],
+  .rounded-\[30px\],
+  .rounded-\[28px\],
+  .rounded-\[24px\],
+  .rounded-\[20px\] {
+    border: 1px solid #ccc !important;
+    box-shadow: none !important;
+    background: #fffaf3 !important;
+    break-inside: avoid;
+  }
+}

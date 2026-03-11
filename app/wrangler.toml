@@ -1,0 +1,12 @@
+name = "yosoymx"
+compatibility_date = "2026-03-11"
+pages_build_output_dir = "dist"
+
+[vars]
+ORIGIN_SITE = "https://yosoymx.com"
+APP_ENV = "production"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "yosoymx-community"
+database_id = "${D1_DATABASE_ID}"
