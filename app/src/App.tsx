@@ -934,7 +934,7 @@ export default function MicrositioAcosoVecinal2026() {
               style={{ fontFamily: TOKENS.font.display }}
             >
               <span style={{ color: TOKENS.color.ink }}>Gaceta </span>
-              <span style={{ color: TOKENS.color.warm }}>Eje Central</span>
+              <span style={{ color: TOKENS.color.warm }}>Eje Central <sup className="text-[10px] opacity-70">v2.0</sup></span>
             </button>
 
             <div className="hidden lg:flex items-center gap-0.5">
