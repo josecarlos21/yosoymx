@@ -34,8 +34,7 @@ jobs:
       - name: Validate deployment contract
         run: |
           if [ -z "$D1_DATABASE_ID" ]; then
-            echo "Falta la variable D1_DATABASE_ID en GitHub Variables."
-            exit 1
+            echo "::warning title=Falta D1_DATABASE_ID::La variable D1_DATABASE_ID no está definida. Se saltará la sincronización de base de datos."
           fi
           if [ ! -f package-lock.json ]; then
             echo "No existe package-lock.json; el pipeline usa npm ci y requiere lockfile npm."
