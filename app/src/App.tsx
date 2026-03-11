@@ -1206,7 +1206,7 @@ export default function MicrositioAcosoVecinal2026() {
             </div>
           </div>
         </div>
-        <div className="mx-auto mt-4 hidden lg:block px-4 md:px-6">
+        <div className="mx-auto mt-4 px-4 md:px-6">
           <SharePanel
             surface="header"
             sharePayload={sharePayload}
@@ -1368,14 +1368,7 @@ export default function MicrositioAcosoVecinal2026() {
                       </a>
                     </div>
                   </div>
-                  <SharePanel
-                    surface="cover"
-                    sharePayload={sharePayload}
-                    summaryText={SHARE_DEFAULT_SUMMARY}
-                    quoteText={SHARE_DEFAULT_QUOTE}
-                    className="rounded-[20px] border bg-white/84 p-4"
-                    onAction={trackShareAction}
-                  />
+
                 </div>
               </div>
               <aside className="grid gap-4">
@@ -2431,17 +2424,7 @@ export default function MicrositioAcosoVecinal2026() {
         </section>
       </main>
 
-      <div className="fixed bottom-3 left-2 right-2 z-40 md:hidden">
-        <SharePanel
-          surface="mobile-sticky"
-          sharePayload={sharePayload}
-          summaryText={SHARE_DEFAULT_SUMMARY}
-          quoteText={SHARE_DEFAULT_QUOTE}
-          compact
-          className="rounded-[20px] border bg-white/96 px-2 py-3 shadow-xl"
-          onAction={trackShareAction}
-        />
-      </div>
+
 
       {/* Footer */}
       <footer className="border-t" style={{ borderColor: TOKENS.color.line, background: TOKENS.color.paper2 }}>
