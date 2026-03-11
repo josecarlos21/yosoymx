@@ -1,5 +1,63 @@
 import Foundation
 
+struct BrandConfig: Decodable {
+    let id: String
+    let siteName: String
+    let masthead: String
+    let shortMasthead: String
+    let themeMode: String
+    let supportLinks: SupportLinks
+    let defaultOgAssetId: String
+    let logoAssetId: String
+    let webIconPack: WebIconPack
+}
+
+struct SupportLinks: Decodable {
+    let email: String
+    let mailSubject: String
+    let tiktokURL: String
+    let tiktokLabel: String
+    let siteURL: String
+    let siteLabel: String
+
+    enum CodingKeys: String, CodingKey {
+        case email
+        case mailSubject
+        case tiktokURL = "tiktokUrl"
+        case tiktokLabel
+        case siteURL = "siteUrl"
+        case siteLabel
+    }
+}
+
+struct WebIconPack: Decodable {
+    let faviconSvg: String
+    let favicon32: String
+    let favicon48: String
+    let appleTouchIcon: String
+    let manifestIcon: String
+    let maskIcon: String
+}
+
+struct EditionEnvelope: Decodable {
+    let item: EditionPayload?
+    let brand: BrandConfig?
+}
+
+struct EditionPayload: Decodable {
+    let id: String
+    let slug: String
+    let status: String
+    let version: Int
+    let publishedAt: String?
+    let label: String
+    let location: String
+    let themeLine: String
+    let contentPayload: IssueContent
+    let createdAt: String
+    let updatedAt: String
+}
+
 struct IssueContent: Decodable {
     let id: String
     let metadata: Metadata

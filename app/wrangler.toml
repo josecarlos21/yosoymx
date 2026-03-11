@@ -10,3 +10,8 @@ APP_ENV = "production"
 binding = "DB"
 database_name = "yosoymx-community"
 database_id = "${D1_DATABASE_ID}"
+
+[[r2_buckets]]
+binding = "MEDIA_BUCKET"
+bucket_name = "${R2_BUCKET_NAME}"
+preview_bucket_name = "${R2_PREVIEW_BUCKET_NAME}"

@@ -17,6 +17,18 @@ final class GacetaIOSSharedDataTests: XCTestCase {
         XCTAssertFalse(content.community.comments.reviewMessage.isEmpty)
     }
 
+    func testBrandConfigDecodesReleaseAssets() throws {
+        let brand: BrandConfig = try decodeFixture(
+            relativePath: "app/shared/content/brand-config.json",
+            as: BrandConfig.self
+        )
+
+        XCTAssertEqual(brand.masthead, "Gaceta Tu Espacio Eje Central")
+        XCTAssertEqual(brand.webIconPack.appleTouchIcon, "/apple-touch-icon.png")
+        XCTAssertEqual(brand.webIconPack.manifestIcon, "/web-app-manifest-512.png")
+        XCTAssertTrue(brand.supportLinks.siteURL.hasPrefix("https://"))
+    }
+
     func testDesignTokensDecodeIntoTheme() throws {
         let tokens: DesignTokens = try decodeFixture(
             relativePath: "app/shared/design/tokens.json",

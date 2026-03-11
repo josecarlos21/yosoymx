@@ -1,0 +1,25 @@
+{
+  "id": "default",
+  "siteName": "Gaceta Tu Espacio",
+  "masthead": "Gaceta Tu Espacio Eje Central",
+  "shortMasthead": "Gaceta Eje Central",
+  "themeMode": "editorial-condominio",
+  "supportLinks": {
+    "email": "contacto@yosoy.mx",
+    "mailSubject": "Duda desde la web de Gaceta Tu Espacio",
+    "tiktokUrl": "https://www.tiktok.com/@joseca_npc",
+    "tiktokLabel": "TikTok @joseca_npc",
+    "siteUrl": "https://yosoymx.com",
+    "siteLabel": "Visitar sitio: yosoymx.com"
+  },
+  "defaultOgAssetId": "",
+  "logoAssetId": "",
+  "webIconPack": {
+    "faviconSvg": "/favicon.svg",
+    "favicon32": "/favicon-32.png",
+    "favicon48": "/favicon-48.png",
+    "appleTouchIcon": "/apple-touch-icon.png",
+    "manifestIcon": "/web-app-manifest-512.png",
+    "maskIcon": "/safari-pinned-tab.svg"
+  }
+}

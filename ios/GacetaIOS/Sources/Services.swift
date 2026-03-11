@@ -62,7 +62,9 @@ enum BundleResourceLocator {
 
 @MainActor
 final class AppModel: ObservableObject {
-    let content: IssueContent
+    @Published private(set) var edition: EditionPayload
+    @Published private(set) var content: IssueContent
+    @Published private(set) var brandConfig: BrandConfig
     let theme: AppTheme
     let config: AppConfig
     let apiClient: APIClient
@@ -70,10 +72,27 @@ final class AppModel: ObservableObject {
     init(bundle: Bundle = .main) {
         let decoder = JSONDecoder()
         config = AppConfig(bundle: bundle)
-        content = AppModel.load("issue-content", bundle: bundle, decoder: decoder)
+        let fallbackContent = AppModel.load("issue-content", bundle: bundle, decoder: decoder) as IssueContent
+        let fallbackBrand = AppModel.load("brand-config", bundle: bundle, decoder: decoder) as BrandConfig
+        edition = EditionPayload(
+            id: fallbackContent.id,
+            slug: fallbackContent.id,
+            status: "published",
+            version: Int(fallbackContent.metadata.version.split(separator: ".").first ?? "1") ?? 1,
+            publishedAt: fallbackContent.metadata.publishedDateISO,
+            label: fallbackContent.metadata.editionLabel,
+            location: fallbackContent.metadata.location,
+            themeLine: fallbackContent.metadata.coverThemeLine,
+            contentPayload: fallbackContent,
+            createdAt: fallbackContent.metadata.publishedDateISO,
+            updatedAt: fallbackContent.metadata.publishedDateISO
+        )
+        content = fallbackContent
+        brandConfig = fallbackBrand
         let tokens = AppModel.load("tokens", bundle: bundle, decoder: decoder) as DesignTokens
         theme = AppTheme.from(tokens)
         apiClient = APIClient(baseURL: config.apiBaseURL)
+        Task { await refreshPublishedEdition() }
     }
 
     private static func load<T: Decodable>(_ name: String, bundle: Bundle, decoder: JSONDecoder) -> T {
@@ -83,6 +102,21 @@ final class AppModel: ObservableObject {
             fatalError("No fue posible cargar \(name).json desde el bundle.")
         }
         return decoded
+    }
+
+    func refreshPublishedEdition() async {
+        do {
+            let remote = try await apiClient.fetchCurrentEdition()
+            if let remoteEdition = remote.item {
+                edition = remoteEdition
+                content = remoteEdition.contentPayload
+            }
+            if let remoteBrand = remote.brand {
+                brandConfig = remoteBrand
+            }
+        } catch {
+            // Mantener fallback o caché local si la red falla.
+        }
     }
 }
 
@@ -119,6 +153,10 @@ final class APIClient: @unchecked Sendable {
         decoder.keyDecodingStrategy = .convertFromSnakeCase
         encoder = JSONEncoder()
         encoder.keyEncodingStrategy = .convertToSnakeCase
+    }
+
+    func fetchCurrentEdition() async throws -> EditionEnvelope {
+        try await request(path: "issues/current", response: EditionEnvelope.self)
     }
 
     func fetchCommunity(kind: CommunityKind, limit: Int = 20) async throws -> [CommunityPost] {

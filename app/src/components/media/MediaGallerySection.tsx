@@ -1,12 +1,15 @@
 import { Camera, ImageUp } from "lucide-react";
 import { useState } from "react";
 import { webThemeTokens } from "@/lib/design-tokens";
-import { issueContent } from "@/lib/issue-content";
+import type { IssueContent } from "@/lib/issue-content";
 
-export function MediaGallerySection() {
+type MediaGallerySectionProps = {
+  gallery: IssueContent["gallery"];
+};
+
+export function MediaGallerySection({ gallery }: MediaGallerySectionProps) {
   const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
   const tokens = webThemeTokens;
-  const gallery = issueContent.gallery;
 
   return (
     <section

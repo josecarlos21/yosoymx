@@ -2,11 +2,15 @@ import SwiftUI
 
 struct LibraryView: View {
     @Environment(\.openURL) private var openURL
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @EnvironmentObject private var model: AppModel
     @Binding var isShowingSettings: Bool
 
     private var content: IssueContent { model.content }
+    private var brand: BrandConfig { model.brandConfig }
     private var theme: AppTheme { model.theme }
+    private var singleColumn: Bool { horizontalSizeClass == .compact || dynamicTypeSize.isAccessibilitySize }
 
     var body: some View {
         ScrollView {
@@ -24,7 +28,7 @@ struct LibraryView: View {
                             .font(.system(.body, design: .serif))
                             .foregroundStyle(theme.inkSoft)
 
-                        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 10), count: 3), spacing: 10) {
+                        LazyVGrid(columns: AdaptiveColumns.compactAware(compact: singleColumn, accessibility: dynamicTypeSize.isAccessibilitySize), spacing: 10) {
                             libraryCountCard(title: "PDFs", value: "\(content.resources.pdfs.count)")
                             libraryCountCard(title: "Galería", value: "\(content.gallery.items.count)")
                             libraryCountCard(title: "Fuentes", value: "\(content.sources.items.count)")
@@ -136,9 +140,11 @@ struct LibraryView: View {
         .background(
             LinearGradient(colors: [theme.paper, theme.paperAlt, theme.mist], startPoint: .topLeading, endPoint: .bottomTrailing)
         )
-        .navigationTitle("Biblioteca")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
+            ToolbarItem(placement: .principal) {
+                MastheadToolbarView(brand: brand, editionLabel: content.metadata.editionLabel)
+            }
             ToolbarItem(placement: .topBarTrailing) {
                 SupportToolbarButton(isPresented: $isShowingSettings)
             }

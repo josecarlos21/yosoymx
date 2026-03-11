@@ -13,6 +13,7 @@ struct CommunityView: View {
     @State private var isShowingComposer = false
 
     private var content: IssueContent { model.content }
+    private var brand: BrandConfig { model.brandConfig }
     private var theme: AppTheme { model.theme }
 
     var body: some View {
@@ -111,9 +112,11 @@ struct CommunityView: View {
             .padding(.vertical, 24)
         }
         .background(LinearGradient(colors: [theme.paper, theme.mist], startPoint: .topLeading, endPoint: .bottomTrailing))
-        .navigationTitle("Comunidad")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
+            ToolbarItem(placement: .principal) {
+                MastheadToolbarView(brand: brand, editionLabel: content.metadata.editionLabel)
+            }
             ToolbarItemGroup(placement: .topBarTrailing) {
                 Button {
                     Task { await refresh() }

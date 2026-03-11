@@ -10,23 +10,24 @@ struct SettingsView: View {
     @State private var tokenDraft = ""
 
     private var content: IssueContent { model.content }
+    private var brand: BrandConfig { model.brandConfig }
     private var theme: AppTheme { model.theme }
 
     var body: some View {
         List {
             Section("Soporte") {
                 Button(content.contact.mailLabel) {
-                    if let url = URL(string: "mailto:\(content.contact.email)?subject=\(content.contact.mailSubject.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")") {
+                    if let url = URL(string: "mailto:\(brand.supportLinks.email)?subject=\(brand.supportLinks.mailSubject.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")") {
                         openURL(url)
                     }
                 }
-                Button(content.contact.tiktokLabel) {
-                    if let url = URL(string: content.contact.tiktokURL) {
+                Button(brand.supportLinks.tiktokLabel) {
+                    if let url = URL(string: brand.supportLinks.tiktokURL) {
                         openURL(url)
                     }
                 }
-                Button(content.contact.siteLabel) {
-                    if let url = URL(string: content.contact.site) {
+                Button(brand.supportLinks.siteLabel) {
+                    if let url = URL(string: brand.supportLinks.siteURL) {
                         openURL(url)
                     }
                 }
@@ -34,7 +35,7 @@ struct SettingsView: View {
 
             Section("Acerca de") {
                 VStack(alignment: .leading, spacing: 8) {
-                    Text(content.metadata.masthead)
+                    Text(brand.masthead)
                         .font(.headline)
                     Text(content.metadata.description)
                         .font(.subheadline)

@@ -9,6 +9,7 @@ struct RouteView: View {
     @State private var isShowingShareSheet = false
 
     private var content: IssueContent { model.content }
+    private var brand: BrandConfig { model.brandConfig }
     private var theme: AppTheme { model.theme }
 
     var body: some View {
@@ -153,9 +154,11 @@ struct RouteView: View {
         .background(
             LinearGradient(colors: [theme.paper, theme.mist], startPoint: .topLeading, endPoint: .bottomTrailing)
         )
-        .navigationTitle("Ruta")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
+            ToolbarItem(placement: .principal) {
+                MastheadToolbarView(brand: brand, editionLabel: content.metadata.editionLabel)
+            }
             ToolbarItem(placement: .topBarTrailing) {
                 SupportToolbarButton(isPresented: $isShowingSettings)
             }

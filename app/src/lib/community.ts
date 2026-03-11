@@ -61,6 +61,10 @@ const communityApiUrl =
   typeof import.meta !== "undefined" && import.meta.env && import.meta.env.VITE_COMMUNITY_API_URL
     ? import.meta.env.VITE_COMMUNITY_API_URL
     : "/api/community";
+const FORCE_LOCAL_API =
+  typeof import.meta !== "undefined" && import.meta.env?.VITE_FORCE_LOCAL_API
+    ? String(import.meta.env.VITE_FORCE_LOCAL_API).toLowerCase() === "true"
+    : false;
 
 export function sanitizeCommunityText(value: string) {
   return normalizeString(value, 5000);
@@ -100,6 +104,12 @@ function isEmailValid(value: string) {
 
 function responseHasJsonContentType(response: Response) {
   return response.headers.get("content-type")?.toLowerCase().includes("application/json") === true;
+}
+
+function shouldPreferLocalFallback(url: string) {
+  if (FORCE_LOCAL_API || typeof window === "undefined") return false;
+  const isLocalHost = ["localhost", "127.0.0.1", "::1"].includes(window.location.hostname);
+  return isLocalHost && url.startsWith("/api/");
 }
 
 async function parseJsonSafe<T>(response: Response): Promise<T | null> {
@@ -300,6 +310,10 @@ function validatePayload(input: CommunityFormInput) {
 }
 
 async function fetchPostsFromApi(kind: CommunityKind, limit: number): Promise<CommunityPost[] | null> {
+  if (shouldPreferLocalFallback(communityApiUrl)) {
+    return null;
+  }
+
   try {
     const params = new URLSearchParams({ kind, limit: String(limit) });
     const response = await requestWithTimeout(`${communityApiUrl}?${params.toString()}`);
@@ -357,6 +371,10 @@ function dedupeLocalPosts(posts: CommunityPost[]) {
 }
 
 async function postToApi(form: CommunityFormInput): Promise<CommunityPost | null> {
+  if (shouldPreferLocalFallback(communityApiUrl)) {
+    return null;
+  }
+
   const payload = validatePayload(form);
   const response = await requestWithTimeout(communityApiUrl, {
     method: "POST",

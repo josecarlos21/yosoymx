@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   AlertOctagon,
@@ -35,7 +35,6 @@ import {
   X,
   type LucideIcon,
 } from "lucide-react";
-import { AdminPanelSection } from "@/components/community/AdminPanelSection";
 import { MediaGallerySection } from "@/components/media/MediaGallerySection";
 import { SharePanel, type SharePanelEvent } from "@/components/social/SharePanel";
 import { Badge } from "@/components/ui/badge";
@@ -43,7 +42,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { fetchCommunityPosts, sanitizeCommunityText, submitCommunityPost, type CommunityPost } from "@/lib/community";
 import { webThemeTokens } from "@/lib/design-tokens";
-import { issueContent, issueNavigation, issuePdfResources, normalizePdfHref } from "@/lib/issue-content";
+import { applyBrandHead, fetchCurrentEdition } from "@/lib/edition-api";
+import { fallbackBrandConfig, fallbackIssueContent, mergeBrandConfig, normalizePdfHref } from "@/lib/issue-content";
 import {
   buildSharePayload,
   buildShareTrackingEvent,
@@ -103,6 +103,8 @@ type SectionMeta = {
   icon: LucideIcon;
 };
 
+type CurrentEditionState = Awaited<ReturnType<typeof fetchCurrentEdition>>;
+
 const TOKENS = webThemeTokens;
 const MAX_NAME_LENGTH = 80;
 const MAX_EMAIL_LENGTH = 180;
@@ -113,12 +115,16 @@ const MIN_MESSAGE_LENGTH = 12;
 const COMMUNITY_COOLDOWN_SECONDS = 25;
 const COMMUNITY_COOLDOWN_STORAGE_KEY = "yosoymx.community.cooldown.v1";
 const HISTORY_FILTER_ALL = "todos";
+const FORCE_LOCAL_API =
+  typeof import.meta !== "undefined" && import.meta.env?.VITE_FORCE_LOCAL_API
+    ? String(import.meta.env.VITE_FORCE_LOCAL_API).toLowerCase() === "true"
+    : false;
 
 const DEFAULT_SHARE_PAYLOAD = buildSharePayload({
-  title: issueContent.share.title,
-  excerpt: issueContent.share.summary,
-  hashtags: issueContent.share.hashtags,
-  canonicalUrl: issueContent.metadata.canonicalUrl,
+  title: fallbackIssueContent.share.title,
+  excerpt: fallbackIssueContent.share.summary,
+  hashtags: fallbackIssueContent.share.hashtags,
+  canonicalUrl: fallbackIssueContent.metadata.canonicalUrl,
 });
 
 const iconMap: Record<string, LucideIcon> = {
@@ -149,15 +155,8 @@ const iconMap: Record<string, LucideIcon> = {
   waves: Waves,
 };
 
-const sectionMeta: SectionMeta[] = issueNavigation.map((item) => ({
-  ...item,
-  icon: iconMap[item.icon] ?? Newspaper,
-}));
 const desktopSectionIds = new Set(["problema", "contexto", "impacto", "datos", "rutas", "accion", "recursos", "comentarios"]);
 const mobileQuickJumpIds = new Set(["problema", "rutas", "recursos", "comentarios"]);
-const desktopSectionMeta = sectionMeta.filter(({ id }) => desktopSectionIds.has(id));
-const sidebarSectionMeta = sectionMeta.filter(({ id }) => id !== "portada");
-const mobileQuickJumpMeta = sectionMeta.filter(({ id }) => mobileQuickJumpIds.has(id));
 
 function extractHashtagsFromTrendPayload(rawPayload: SocialTrendResponse | null) {
   if (!rawPayload || typeof rawPayload !== "object") return SHARE_DEFAULT_HASHTAGS;
@@ -350,7 +349,7 @@ function EmptyCommunityState({ text }: { text: string }) {
   );
 }
 
-function buildHistoryCategoryOptions(posts: CommunityPost[]): CategoryOption[] {
+function buildHistoryCategoryOptions(posts: CommunityPost[], allLabel: string): CategoryOption[] {
   const categoriesMap = new Map<string, string>();
   for (const post of posts) {
     const normalized = sanitizeCommunityText(post.category || "").trim();
@@ -362,7 +361,7 @@ function buildHistoryCategoryOptions(posts: CommunityPost[]): CategoryOption[] {
   }
 
   return [
-    { value: HISTORY_FILTER_ALL, label: issueContent.community.history.allFilterLabel },
+    { value: HISTORY_FILTER_ALL, label: allLabel },
     ...Array.from(categoriesMap.entries())
       .sort((a, b) => a[1].localeCompare(b[1], "es"))
       .map(([value, label]) => ({ value, label })),
@@ -445,6 +444,8 @@ function buildContactMailto(baseEmail: string, topic: string) {
 }
 
 export default function MicrositioAcosoVecinal2026() {
+  const [currentEdition, setCurrentEdition] = useState<CurrentEditionState | null>(null);
+  const [brandConfig, setBrandConfig] = useState(fallbackBrandConfig);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeSection, setActiveSection] = useState("portada");
   const [readProgress, setReadProgress] = useState(0);
@@ -453,6 +454,26 @@ export default function MicrositioAcosoVecinal2026() {
   const scrollRafRef = useRef<number | null>(null);
   const observer = useRef<IntersectionObserver | null>(null);
   const isMountedRef = useRef(true);
+
+  const issueContent = currentEdition?.item.contentPayload ?? fallbackIssueContent;
+  const canonicalUrl = issueContent.metadata.canonicalUrl;
+  const issueNavigation = useMemo(() => issueContent.navigation, [issueContent.navigation]);
+  const issuePdfResources = useMemo(() => issueContent.resources.pdfs, [issueContent.resources.pdfs]);
+  const mergedBrandConfig = useMemo(
+    () => (currentEdition?.item.brandOverrides ? mergeBrandConfig(brandConfig, currentEdition.item.brandOverrides) : brandConfig),
+    [brandConfig, currentEdition?.item.brandOverrides]
+  );
+  const sectionMeta: SectionMeta[] = useMemo(
+    () =>
+      issueNavigation.map((item) => ({
+        ...item,
+        icon: iconMap[item.icon] ?? Newspaper,
+      })),
+    [issueNavigation]
+  );
+  const desktopSectionMeta = useMemo(() => sectionMeta.filter(({ id }) => desktopSectionIds.has(id)), [sectionMeta]);
+  const sidebarSectionMeta = useMemo(() => sectionMeta.filter(({ id }) => id !== "portada"), [sectionMeta]);
+  const mobileQuickJumpMeta = useMemo(() => sectionMeta.filter(({ id }) => mobileQuickJumpIds.has(id)), [sectionMeta]);
 
   const [pdfDownloadState, setPdfDownloadState] = useState<Record<string, PdfDownloadState>>(
     () => Object.fromEntries(issuePdfResources.map((resource) => [resource.id, { status: "idle" }]))
@@ -490,6 +511,29 @@ export default function MicrositioAcosoVecinal2026() {
       !["localhost", "127.0.0.1", "::1"].includes(window.location.hostname)
       ? SOCIAL_SHARE_EVENTS_FALLBACK_ENDPOINT
       : "");
+  const shouldSkipLiveSocialTrends =
+    !FORCE_LOCAL_API && typeof window !== "undefined" && ["localhost", "127.0.0.1", "::1"].includes(window.location.hostname);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadEdition = async () => {
+      const next = await fetchCurrentEdition();
+      if (cancelled) return;
+      setCurrentEdition(next);
+      setBrandConfig(next.brand);
+      applyBrandHead(next.brand, next.item);
+    };
+
+    void loadEdition();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    setPdfDownloadState(Object.fromEntries(issuePdfResources.map((resource) => [resource.id, { status: "idle" }])));
+  }, [issuePdfResources]);
 
   useEffect(() => {
     setSharePayload((prev) =>
@@ -498,7 +542,7 @@ export default function MicrositioAcosoVecinal2026() {
         excerpt: prev.excerpt,
         hashtags: prev.hashtags,
         url: window.location.href,
-        canonicalUrl: issueContent.metadata.canonicalUrl,
+        canonicalUrl,
       })
     );
 
@@ -512,16 +556,18 @@ export default function MicrositioAcosoVecinal2026() {
           excerpt: prev.excerpt,
           hashtags: prev.hashtags,
           url: window.location.href,
-          canonicalUrl: issueContent.metadata.canonicalUrl,
+          canonicalUrl,
         });
       });
     };
 
     document.addEventListener("visibilitychange", handleVisibilityChange);
     return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
-  }, []);
+  }, [canonicalUrl]);
 
   useEffect(() => {
+    if (shouldSkipLiveSocialTrends) return;
+
     const controller = new AbortController();
     const { signal } = controller;
 
@@ -537,7 +583,7 @@ export default function MicrositioAcosoVecinal2026() {
             excerpt: prev.excerpt,
             hashtags: trendingHashtags,
             url: prev.url,
-            canonicalUrl: issueContent.metadata.canonicalUrl,
+            canonicalUrl,
           });
           return next.hashtags.join(",") === prev.hashtags.join(",") ? prev : next;
         });
@@ -548,7 +594,7 @@ export default function MicrositioAcosoVecinal2026() {
 
     void loadTrends();
     return () => controller.abort();
-  }, []);
+  }, [canonicalUrl, shouldSkipLiveSocialTrends]);
 
   const trackShareAction = (event: SharePanelEvent) => {
     const payload = buildShareTrackingEvent(event, sharePayload.url, "social_panel", SHARE_ARTICLE_ID);
@@ -608,7 +654,7 @@ export default function MicrositioAcosoVecinal2026() {
     });
 
     return () => observer.current?.disconnect();
-  }, []);
+  }, [sectionMeta]);
 
   const copyToClipboard = async (text: string) => {
     if (!text) return;
@@ -671,7 +717,7 @@ export default function MicrositioAcosoVecinal2026() {
 
     void checkAvailability();
     return () => controller.abort();
-  }, []);
+  }, [issuePdfResources]);
 
   const loadCommunity = async () => {
     setCommunityLoading(true);
@@ -803,8 +849,15 @@ export default function MicrositioAcosoVecinal2026() {
     });
   };
 
-  const historyCategories = buildHistoryCategoryOptions(histories);
+  const historyCategories = useMemo(
+    () => buildHistoryCategoryOptions(histories, issueContent.community.history.allFilterLabel),
+    [histories, issueContent.community.history.allFilterLabel]
+  );
   const filteredHistories = filterByHistoryCategory(histories, historyFilter);
+
+  useEffect(() => {
+    setCoverImageError(false);
+  }, [issueContent.metadata.heroImage.src]);
 
   useEffect(() => {
     isMountedRef.current = true;
@@ -892,7 +945,7 @@ export default function MicrositioAcosoVecinal2026() {
         <div className="mx-auto max-w-[1440px] px-4 md:px-6">
           <div className="flex h-14 items-center justify-between">
             <button onClick={() => scrollToSection("portada")} className="whitespace-nowrap text-base font-black tracking-tight" style={{ fontFamily: TOKENS.font.display }}>
-              <span style={{ color: TOKENS.color.ink }}>{issueContent.metadata.siteName} </span>
+              <span style={{ color: TOKENS.color.ink }}>{mergedBrandConfig.siteName} </span>
               <span style={{ color: TOKENS.color.warm }}>
                 Eje Central <sup className="text-[10px] opacity-70">v{issueContent.metadata.version}</sup>
               </span>
@@ -976,7 +1029,7 @@ export default function MicrositioAcosoVecinal2026() {
                 {issueContent.metadata.editionLabel}
               </div>
               <div className="mt-2 text-[clamp(2.4rem,5.6vw,5.2rem)] font-black leading-none tracking-tight" style={{ fontFamily: TOKENS.font.display }}>
-                <span style={{ color: TOKENS.color.ink }}>{issueContent.metadata.siteName} </span>
+                <span style={{ color: TOKENS.color.ink }}>{mergedBrandConfig.siteName} </span>
                 <span style={{ color: TOKENS.color.warm }}>Eje Central</span>
               </div>
               <div className="mt-2 text-[13px] uppercase tracking-[0.28em]" style={{ color: TOKENS.color.inkSoft }}>
@@ -1000,7 +1053,7 @@ export default function MicrositioAcosoVecinal2026() {
             surface="header"
             sharePayload={sharePayload}
             summaryText={issueContent.share.summary}
-            quoteText={issueContent.share.quote}
+            compact
             className="rounded-[20px] border bg-white/84 p-4 shadow-sm"
             onAction={trackShareAction}
           />
@@ -1688,7 +1741,7 @@ export default function MicrositioAcosoVecinal2026() {
           </div>
         </section>
 
-        <MediaGallerySection />
+        <MediaGallerySection gallery={issueContent.gallery} />
 
         <section id="comentarios" className="border-t" style={{ borderColor: TOKENS.color.line, ...paperStyle(false), ...TOKENS.sectionPad }}>
           <div className="mx-auto max-w-[1440px] px-4 md:px-6">
@@ -2005,8 +2058,6 @@ export default function MicrositioAcosoVecinal2026() {
           </div>
         </section>
 
-        <AdminPanelSection />
-
         <section id="contacto" className="border-t" style={{ borderColor: TOKENS.color.line, ...paperStyle(false), ...TOKENS.sectionPad }}>
           <div className="mx-auto max-w-[1440px] px-4 md:px-6">
             <div className="rounded-[32px] p-6 md:p-10" style={{ background: TOKENS.color.paperAlt, border: TOKENS.cardBorder, boxShadow: TOKENS.shadow.lift }}>
@@ -2021,14 +2072,14 @@ export default function MicrositioAcosoVecinal2026() {
                 <a
                   className="print-link-row rounded-[20px] border p-4 font-semibold transition hover:bg-white"
                   style={{ borderColor: TOKENS.color.line, background: "rgba(255,255,255,0.88)", color: TOKENS.color.warm }}
-                  href={buildContactMailto(issueContent.contact.email, issueContent.contact.mailSubject)}
+                  href={buildContactMailto(mergedBrandConfig.supportLinks.email || issueContent.contact.email, mergedBrandConfig.supportLinks.mailSubject || issueContent.contact.mailSubject)}
                 >
                   {issueContent.contact.mailLabel}
                 </a>
                 <a
                   className="print-link-row rounded-[20px] border p-4 font-semibold transition hover:bg-white"
                   style={{ borderColor: TOKENS.color.line, background: "rgba(255,255,255,0.88)", color: TOKENS.color.warm }}
-                  href={issueContent.contact.tiktokUrl}
+                  href={mergedBrandConfig.supportLinks.tiktokUrl || issueContent.contact.tiktokUrl}
                   target="_blank"
                   rel="noreferrer"
                 >
@@ -2037,11 +2088,11 @@ export default function MicrositioAcosoVecinal2026() {
                 <a
                   className="print-link-row rounded-[20px] border p-4 font-semibold transition hover:bg-white"
                   style={{ borderColor: TOKENS.color.line, background: "rgba(255,255,255,0.88)", color: TOKENS.color.warm }}
-                  href={issueContent.contact.site}
+                  href={mergedBrandConfig.supportLinks.siteUrl || issueContent.contact.site}
                   target="_blank"
                   rel="noreferrer"
                 >
-                  {issueContent.contact.siteLabel}
+                  {mergedBrandConfig.supportLinks.siteLabel || issueContent.contact.siteLabel}
                 </a>
               </div>
             </div>
@@ -2053,7 +2104,7 @@ export default function MicrositioAcosoVecinal2026() {
         <div className="mx-auto flex max-w-[1440px] flex-col gap-4 px-4 py-10 text-sm md:flex-row md:items-center md:justify-between md:px-6" style={{ color: "rgba(66,52,43,0.68)" }}>
           <div>
             <div className="font-semibold" style={{ color: TOKENS.color.ink }}>
-              {issueContent.metadata.masthead} · {issueContent.metadata.editionLabel}
+              {mergedBrandConfig.masthead} · {issueContent.metadata.editionLabel}
             </div>
             <div>Artículo oficial, archivo real, fuentes verificables visibles.</div>
           </div>

@@ -2,6 +2,8 @@ import SwiftUI
 
 struct StartView: View {
     @Environment(\.openURL) private var openURL
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @EnvironmentObject private var model: AppModel
     @Binding var selectedTab: RootTab
     @Binding var isShowingSettings: Bool
@@ -10,7 +12,9 @@ struct StartView: View {
     @State private var isShowingShareSheet = false
 
     private var content: IssueContent { model.content }
+    private var brand: BrandConfig { model.brandConfig }
     private var theme: AppTheme { model.theme }
+    private var singleColumn: Bool { horizontalSizeClass == .compact || dynamicTypeSize.isAccessibilitySize }
 
     var body: some View {
         ScrollView {
@@ -23,9 +27,11 @@ struct StartView: View {
             .padding(.vertical, 24)
         }
         .background(backgroundGradient)
-        .navigationTitle("Inicio")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
+            ToolbarItem(placement: .principal) {
+                MastheadToolbarView(brand: brand, editionLabel: content.metadata.editionLabel)
+            }
             ToolbarItem(placement: .topBarTrailing) {
                 SupportToolbarButton(isPresented: $isShowingSettings)
             }
@@ -51,40 +57,61 @@ struct StartView: View {
 
     private var hero: some View {
         VStack(alignment: .leading, spacing: 18) {
-            EditorialSurface(cornerRadius: theme.radiusXLarge) {
-                VStack(alignment: .leading, spacing: 18) {
-                    Text(content.metadata.editionLabel.uppercased())
-                        .font(.system(.caption, design: .rounded, weight: .bold))
-                        .tracking(2)
-                        .foregroundStyle(theme.warm)
+                EditorialSurface(cornerRadius: theme.radiusXLarge) {
+                    VStack(alignment: .leading, spacing: 18) {
+                        HStack(spacing: 12) {
+                            Image("BrandMark")
+                                .resizable()
+                                .scaledToFit()
+                                .frame(width: 34, height: 34)
+
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(brand.siteName)
+                                    .font(.caption.weight(.semibold))
+                                    .foregroundStyle(theme.inkSoft)
+                                Text(brand.masthead)
+                                    .font(.headline.weight(.black))
+                                    .foregroundStyle(theme.ink)
+                                    .lineLimit(2)
+                            }
+
+                            Spacer(minLength: 0)
+                        }
+
+                        Text(content.metadata.editionLabel.uppercased())
+                            .font(.system(.caption, design: .rounded, weight: .bold))
+                            .tracking(2)
+                            .foregroundStyle(theme.warm)
 
                     Text(content.cover.title)
-                        .font(.system(size: 38, weight: .black, design: .serif))
+                        .font(.system(.largeTitle, design: .serif, weight: .black))
                         .foregroundStyle(theme.ink)
+                        .fixedSize(horizontal: false, vertical: true)
 
                     Text(content.cover.titleAccent)
-                        .font(.system(size: 30, weight: .bold, design: .serif))
+                        .font(.system(.title, design: .serif, weight: .bold))
                         .foregroundStyle(theme.warm)
+                        .fixedSize(horizontal: false, vertical: true)
 
                     Text(content.cover.summary)
                         .font(.system(.body, design: .serif))
                         .foregroundStyle(theme.inkSoft)
 
-                    LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 10), count: 3), spacing: 10) {
+                    LazyVGrid(columns: AdaptiveColumns.compactAware(compact: singleColumn, accessibility: dynamicTypeSize.isAccessibilitySize), spacing: 10) {
                         heroMetaCard(title: "Fecha", value: content.metadata.publishedDisplay)
                         heroMetaCard(title: "Fuentes", value: "\(content.sources.items.count)")
                         heroMetaCard(title: "PDFs", value: "\(content.resources.pdfs.count)")
                     }
 
                     AssetImageView(path: content.metadata.heroImage.src)
-                        .frame(height: 240)
+                        .frame(height: singleColumn ? 220 : 260)
                         .clipShape(RoundedRectangle(cornerRadius: theme.radiusLarge, style: .continuous))
 
                     Text(content.metadata.heroImage.caption)
                         .font(.footnote)
                         .foregroundStyle(theme.inkSoft)
 
-                    HStack(spacing: 12) {
+                    VStack(spacing: 12) {
                         Button {
                             shareItems = [content.share.title, content.share.summary, URL(string: content.metadata.canonicalURL)!]
                             isShowingShareSheet = true
@@ -125,7 +152,7 @@ struct StartView: View {
                             .font(.caption.weight(.bold))
                             .foregroundStyle(theme.warm)
 
-                        HStack(spacing: 10) {
+                        LazyVGrid(columns: AdaptiveColumns.compactAware(compact: singleColumn, accessibility: dynamicTypeSize.isAccessibilitySize), spacing: 10) {
                             tabShortcut(title: "Ruta", systemImage: "point.3.connected.trianglepath.dotted", tab: .route)
                             tabShortcut(title: "Biblioteca", systemImage: "books.vertical.fill", tab: .library)
                             tabShortcut(title: "Comunidad", systemImage: "person.3.fill", tab: .community)
@@ -223,18 +250,18 @@ struct StartView: View {
                                     .font(.system(.body, design: .serif))
                                     .foregroundStyle(theme.inkSoft)
                             }
-                            .frame(width: 260, alignment: .leading)
+                            .frame(width: singleColumn ? 280 : 260, alignment: .leading)
                         }
                     }
                 }
             }
 
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 12), count: 2), spacing: 12) {
+            LazyVGrid(columns: AdaptiveColumns.compactAware(compact: singleColumn, accessibility: dynamicTypeSize.isAccessibilitySize), spacing: 12) {
                 ForEach(content.cover.keyFigures.items) { item in
                     EditorialSurface(cornerRadius: theme.radiusLarge) {
                         VStack(alignment: .leading, spacing: 8) {
                             Text(item.value)
-                                .font(.system(size: 30, weight: .black, design: .serif))
+                                .font(.system(.title, design: .serif, weight: .black))
                                 .foregroundStyle(theme.warm)
                             Text(item.label)
                                 .font(.subheadline.weight(.semibold))
@@ -279,11 +306,11 @@ struct StartView: View {
                 title: content.context.title,
                 summary: content.context.summary
             ) {
-                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 12), count: 2), spacing: 12) {
+                LazyVGrid(columns: AdaptiveColumns.compactAware(compact: singleColumn, accessibility: dynamicTypeSize.isAccessibilitySize), spacing: 12) {
                     ForEach(content.context.statCards) { stat in
                         VStack(alignment: .leading, spacing: 6) {
                             Text(stat.number)
-                                .font(.system(size: 28, weight: .black, design: .serif))
+                                .font(.system(.title2, design: .serif, weight: .black))
                                 .foregroundStyle(theme.warm)
                             Text(stat.label)
                                 .font(.headline)
