@@ -30,6 +30,7 @@ import {
   Volume2,
   BarChart3,
   AlertOctagon,
+  Camera,
   Menu,
   X
 } from "lucide-react";
@@ -40,6 +41,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { MediaGallerySection } from "@/components/media/MediaGallerySection";
 import { SocialAuthButtons } from "@/components/community/SocialAuthButtons";
+import { SharePanel, type SharePanelEvent } from "@/components/social/SharePanel";
+import { buildSharePayload, buildShareTrackingEvent, buildTikTokSearchUrl, buildXHashtagUrl, copyTextWithFallback, normalizeHashtags, normalizeHashtagForQuery, SHARE_CANONICAL_URL_FALLBACK, SHARE_DEFAULT_HASHTAGS, SHARE_DEFAULT_QUOTE, SHARE_DEFAULT_SUMMARY, SHARE_DEFAULT_TITLE, SHARE_ARTICLE_ID, SHARE_REEL_GUIDE, SOCIAL_SHARE_EVENTS_FALLBACK_ENDPOINT, SOCIAL_TRENDS_ENDPOINT, type SharePayload as SharePanelPayload } from "@/lib/share-contract";
 
 // Design Tokens - Editorial Style 2026
 const TOKENS = {
@@ -80,6 +83,7 @@ const sectionMeta = [
   { id: "datos", label: "Los Datos", icon: BarChart3 },
   { id: "rutas", label: "Rutas", icon: Building2 },
   { id: "accion", label: "Acción", icon: ScrollText },
+  { id: "galeria", label: "Galería", icon: Camera },
   { id: "fuentes", label: "Fuentes", icon: Link2 },
   { id: "recursos", label: "Recursos", icon: BookOpen },
   { id: "comentarios", label: "Comentarios", icon: MessageSquareWarning },
@@ -137,6 +141,8 @@ const CONTACT_DATA = {
   site: "https://yosoymx.com",
 };
 
+const COVER_EDITORIAL_IMAGE = "/photos/periodico-cover-01.png";
+
 const MAX_NAME_LENGTH = 80;
 const MAX_EMAIL_LENGTH = 180;
 const MAX_COMMENT_MESSAGE_LENGTH = 1200;
@@ -146,6 +152,10 @@ const MIN_MESSAGE_LENGTH = 12;
 const COMMUNITY_COOLDOWN_SECONDS = 25;
 const COMMUNITY_COOLDOWN_STORAGE_KEY = "yosoymx.community.cooldown.v1";
 const HISTORY_FILTER_ALL = "todos";
+type SocialTrendResponse = {
+  hashtags?: unknown;
+  tags?: unknown;
+};
 
 const PDF_RESOURCES: PdfResource[] = [
   {
@@ -177,6 +187,19 @@ const PDF_RESOURCES: PdfResource[] = [
     href: "/pdfs/acoso_vecinal_china_cdmx.pdf",
   },
 ];
+
+const DEFAULT_SHARE_PAYLOAD = buildSharePayload({
+  title: SHARE_DEFAULT_TITLE,
+  excerpt: SHARE_DEFAULT_SUMMARY,
+  hashtags: SHARE_DEFAULT_HASHTAGS,
+  canonicalUrl: SHARE_CANONICAL_URL_FALLBACK,
+});
+
+function extractHashtagsFromTrendPayload(rawPayload: SocialTrendResponse | null) {
+  if (!rawPayload || typeof rawPayload !== "object") return SHARE_DEFAULT_HASHTAGS;
+  const candidate = rawPayload.hashtags ?? rawPayload.tags;
+  return normalizeHashtags(Array.isArray(candidate) ? candidate : [], SHARE_DEFAULT_HASHTAGS);
+}
 
 const normalizePdfHref = (path: string) => (path.startsWith("/") ? path : `/${path}`);
 
@@ -553,13 +576,121 @@ export default function MicrositioAcosoVecinal2026() {
   const [commentCooldownLeft, setCommentCooldownLeft] = useState(0);
   const [historyCooldownLeft, setHistoryCooldownLeft] = useState(0);
   const [generalCommunityError, setGeneralCommunityError] = useState("");
+  const [coverImageError, setCoverImageError] = useState(false);
   const commentStatusTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const historyStatusTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const cooldownIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [socialAuthMessage, setSocialAuthMessage] = useState("");
+  const [sharePayload, setSharePayload] = useState<SharePanelPayload>({
+    title: DEFAULT_SHARE_PAYLOAD.title,
+    excerpt: DEFAULT_SHARE_PAYLOAD.excerpt,
+    url: typeof window === "undefined" ? DEFAULT_SHARE_PAYLOAD.url : window.location.href,
+    hashtags: DEFAULT_SHARE_PAYLOAD.hashtags,
+  });
+  const visibleHashtags = sharePayload.hashtags.length ? sharePayload.hashtags : SHARE_DEFAULT_HASHTAGS;
+  const primaryHashtag = visibleHashtags[0] || SHARE_DEFAULT_HASHTAGS[0];
+  const analyticsShareEndpoint =
+    (import.meta.env.VITE_SHARE_EVENTS_ENDPOINT as string | undefined) ||
+    (typeof window !== "undefined" &&
+      !["localhost", "127.0.0.1", "::1"].includes(window.location.hostname)
+      ? SOCIAL_SHARE_EVENTS_FALLBACK_ENDPOINT
+      : "");
 
   // Scroll spy & Progress setup
   const observer = useRef<IntersectionObserver | null>(null);
+
+  useEffect(() => {
+    setSharePayload((prev) =>
+      buildSharePayload({
+        title: prev.title,
+        excerpt: prev.excerpt,
+        hashtags: prev.hashtags,
+        url: window.location.href,
+        canonicalUrl: SHARE_CANONICAL_URL_FALLBACK,
+      })
+    );
+
+    const handleVisibilityChange = () => {
+      setSharePayload((prev) => {
+        const currentUrl = prev.url;
+        if (document.visibilityState === "visible" && currentUrl === window.location.href) return prev;
+        return buildSharePayload({
+          title: prev.title,
+          excerpt: prev.excerpt,
+          hashtags: prev.hashtags,
+          url: window.location.href,
+          canonicalUrl: SHARE_CANONICAL_URL_FALLBACK,
+        });
+      });
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
+  }, []);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    const { signal } = controller;
+    const loadTrends = async () => {
+      try {
+        const response = await fetch(SOCIAL_TRENDS_ENDPOINT, { signal });
+        if (!response.ok) return;
+        const payload = (await response.json()) as SocialTrendResponse | null;
+        const trendingHashtags = extractHashtagsFromTrendPayload(payload);
+        setSharePayload((prev) => {
+          const next = buildSharePayload({
+            title: prev.title,
+            excerpt: prev.excerpt,
+            hashtags: trendingHashtags,
+            url: prev.url,
+            canonicalUrl: SHARE_CANONICAL_URL_FALLBACK,
+          });
+
+          if (
+            next.hashtags.length === prev.hashtags.length &&
+            next.hashtags.every((tag, index) => tag === prev.hashtags[index])
+          ) {
+            return prev;
+          }
+          return next;
+        });
+      } catch {
+        // Mantener hashtags curados si no hay endpoint o falla.
+      }
+    };
+
+    loadTrends();
+    return () => controller.abort();
+  }, []);
+
+  const trackShareAction = (event: SharePanelEvent) => {
+    const payload = buildShareTrackingEvent(event, sharePayload.url, "social_panel", SHARE_ARTICLE_ID);
+
+    if (!analyticsShareEndpoint) {
+      return;
+    }
+
+    if (!isMountedRef.current) return;
+
+    try {
+      if (typeof navigator.sendBeacon === "function") {
+        const body = JSON.stringify(payload);
+        const blob = new Blob([body], { type: "application/json" });
+        const didQueue = navigator.sendBeacon(analyticsShareEndpoint, blob);
+        if (didQueue) {
+          return;
+        }
+      }
+
+      void fetch(analyticsShareEndpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      }).catch(() => { });
+    } catch {
+      // Métrica opcional; no bloquea experiencia.
+    }
+  };
 
   useEffect(() => {
     const handleScroll = () => {
@@ -602,17 +733,22 @@ export default function MicrositioAcosoVecinal2026() {
   }, []);
 
   const copyToClipboard = async (text: string) => {
+    if (!text) return;
     try {
-      await navigator.clipboard.writeText(text);
+      const result = await copyTextWithFallback(text);
       if (!isMountedRef.current) return;
+      if (result.status === "error") {
+        console.error("Fallo al copiar");
+        return;
+      }
       if (copyTimeoutRef.current) {
         window.clearTimeout(copyTimeoutRef.current);
         copyTimeoutRef.current = null;
       }
       setCopied(true);
       copyTimeoutRef.current = window.setTimeout(() => setCopied(false), 2000);
-    } catch (err) {
-      console.error("Fallo al copiar", err);
+    } catch {
+      console.error("Fallo al copiar");
     }
   };
 
@@ -790,6 +926,15 @@ export default function MicrositioAcosoVecinal2026() {
     await submitForm("comment", commentForm, setCommentForm, setCommentSubmitState);
   };
 
+  const trackHashtagClick = (tag: string, platform: "x" | "tiktok") => {
+    trackShareAction({
+      action: platform === "x" ? "x" : "tiktok",
+      surface: "cover",
+      status: "ok",
+      message: `hashtag:${normalizeHashtagForQuery(tag)}`,
+    });
+  };
+
   const submitHistory = async (event: React.FormEvent) => {
     event.preventDefault();
     await submitForm("history", historyForm, setHistoryForm, setHistorySubmitState);
@@ -934,7 +1079,7 @@ export default function MicrositioAcosoVecinal2026() {
               style={{ fontFamily: TOKENS.font.display }}
             >
               <span style={{ color: TOKENS.color.ink }}>Gaceta </span>
-              <span style={{ color: TOKENS.color.warm }}>Eje Central <sup className="text-[10px] opacity-70">v2.0</sup></span>
+              <span style={{ color: TOKENS.color.warm }}>Eje Central <sup className="text-[10px] opacity-70">v2.2</sup></span>
             </button>
 
             <div className="hidden lg:flex items-center gap-0.5">
@@ -1061,6 +1206,16 @@ export default function MicrositioAcosoVecinal2026() {
             </div>
           </div>
         </div>
+        <div className="mx-auto mt-4 hidden lg:block px-4 md:px-6">
+          <SharePanel
+            surface="header"
+            sharePayload={sharePayload}
+            summaryText={SHARE_DEFAULT_SUMMARY}
+            quoteText={SHARE_DEFAULT_QUOTE}
+            className="rounded-[20px] border bg-white/84 p-4 shadow-sm"
+            onAction={trackShareAction}
+          />
+        </div>
       </header>
 
       <main className="print-document">
@@ -1103,6 +1258,30 @@ export default function MicrositioAcosoVecinal2026() {
                       </div>
                     ))}
                   </div>
+                  <figure className="mt-6 overflow-hidden rounded-[20px] border" style={{ borderColor: TOKENS.color.line }}>
+                    {coverImageError ? (
+                      <div
+                        className="flex h-72 w-full items-center justify-center bg-white/92 text-sm"
+                        style={{ color: TOKENS.color.inkSoft }}
+                      >
+                        Imagen de portada pendiente
+                      </div>
+                    ) : (
+                      <img
+                        src={COVER_EDITORIAL_IMAGE}
+                        alt="Registro de impacto urbano relacionado con acoso vecinal, ruido y vibración."
+                        loading="eager"
+                        className="h-72 w-full object-cover"
+                        onError={() => setCoverImageError(true)}
+                      />
+                    )}
+                    <figcaption
+                      className="p-3 text-xs"
+                      style={{ color: TOKENS.color.inkSoft, background: "rgba(255,255,255,0.92)" }}
+                    >
+                      Señales visuales del impacto vecinal: tránsito, ruido recurrente y desgaste comunitario.
+                    </figcaption>
+                  </figure>
                 </div>
 
                 <div className="rounded-[20px] border bg-white/82 p-5 md:p-6" style={{ borderColor: TOKENS.color.line, boxShadow: TOKENS.shadow.soft }}>
@@ -1116,9 +1295,89 @@ export default function MicrositioAcosoVecinal2026() {
                     función básica de refugio y el conflicto se convierte en un problema de convivencia, salud
                     y permanencia habitacional."
                   </p>
+                  <div className="rounded-[22px] border bg-white/84 p-5 md:p-6" style={{ borderColor: TOKENS.color.line, boxShadow: TOKENS.shadow.soft }}>
+                    <div className="mb-4 flex items-center justify-between gap-3">
+                      <div>
+                        <div className="text-[11px] uppercase tracking-[0.24em]" style={{ color: TOKENS.color.warm }}>Hashtags y reel</div>
+                        <h3 className="mt-2 text-xl font-black" style={{ fontFamily: TOKENS.font.display }}>Campaña en tiempo real (manual)</h3>
+                      </div>
+                      <Badge className="rounded-full border-0 shadow-none" style={{ background: "rgba(201,94,42,0.12)", color: TOKENS.color.warm }}>
+                        #AcosoVecinal
+                      </Badge>
+                    </div>
+                    <div className="mb-4 flex flex-wrap gap-2 text-sm">
+                      {visibleHashtags.map((tag) => (
+                        <a
+                          key={tag}
+                          href={buildXHashtagUrl(tag)}
+                          target="_blank"
+                          rel="noreferrer"
+                          onClick={() => trackHashtagClick(tag, "x")}
+                          className="rounded-full border px-4 py-1.5 transition hover:bg-white"
+                          style={{ borderColor: TOKENS.color.line, color: TOKENS.color.warm }}
+                        >
+                          #{normalizeHashtagForQuery(tag)}
+                        </a>
+                      ))}
+                    </div>
+                    <div className="mb-4 rounded-[16px] border p-4" style={{ borderColor: TOKENS.color.line, background: "rgba(255,255,255,0.55)" }}>
+                      <div className="text-xs uppercase tracking-[0.24em]" style={{ color: TOKENS.color.warm }}>{SHARE_REEL_GUIDE.title}</div>
+                      <ol className="mt-2 list-decimal pl-5 text-sm leading-7" style={{ color: TOKENS.color.inkSoft }}>
+                        {SHARE_REEL_GUIDE.shots.map((shot) => (
+                          <li key={shot}>{shot}</li>
+                        ))}
+                      </ol>
+                      <p className="mt-3 text-sm font-semibold" style={{ color: TOKENS.color.warm }}>{SHARE_REEL_GUIDE.cta}</p>
+                    </div>
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      <Button variant="outline" size="sm" className="justify-start" onClick={() => copyToClipboard(SHARE_DEFAULT_QUOTE)}>
+                        <Quote className="h-4 w-4" />
+                        <span className="ml-2">Copiar frase pública</span>
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="justify-start"
+                        onClick={() => copyToClipboard(`Guion 15s: ${SHARE_REEL_GUIDE.shots.join(" | ")}`)}
+                      >
+                        <ExternalLink className="h-4 w-4" />
+                        <span className="ml-2">Copiar guion Reel</span>
+                      </Button>
+                    </div>
+                    <div className="mt-3 flex flex-wrap gap-3 text-sm">
+                      <a
+                        href={buildTikTokSearchUrl(primaryHashtag)}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-2 underline decoration-warm-300 underline-offset-4"
+                        style={{ color: TOKENS.color.ink }}
+                        onClick={() => trackHashtagClick(primaryHashtag, "tiktok")}
+                      >
+                        Abrir TikTok
+                      </a>
+                      <a
+                        href={buildXHashtagUrl(primaryHashtag)}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-2 underline decoration-warm-300 underline-offset-4"
+                        style={{ color: TOKENS.color.ink }}
+                        onClick={() => trackHashtagClick(primaryHashtag, "x")}
+                      >
+                        Ver hashtag base en X
+                      </a>
+                    </div>
+                  </div>
+                  <SharePanel
+                    surface="cover"
+                    sharePayload={sharePayload}
+                    summaryText={SHARE_DEFAULT_SUMMARY}
+                    quoteText={SHARE_DEFAULT_QUOTE}
+                    className="rounded-[20px] border bg-white/84 p-4"
+                    onAction={trackShareAction}
+                  />
                 </div>
               </div>
-
               <aside className="grid gap-4">
                 <div className="rounded-[20px] border p-5 md:p-6" style={{ background: TOKENS.color.cacao, color: TOKENS.color.cream, borderColor: "rgba(255,255,255,0.08)", boxShadow: TOKENS.shadow.deep }}>
                   <div className="mb-4 flex items-center gap-3">
@@ -1732,10 +1991,18 @@ export default function MicrositioAcosoVecinal2026() {
               </blockquote>
 
               <div className="mt-8 flex flex-wrap gap-3">
-                {["#AcosoVecinal", "#GentrificaciónCDMX", "#DerechoALaVivienda", "#RuidoYSalud", "#DesplazamientoForzado"].map((tag) => (
-                  <span key={tag} className="rounded-full px-4 py-2 text-sm" style={{ background: "rgba(201,94,42,0.1)", color: TOKENS.color.warm }}>
-                    {tag}
-                  </span>
+                {visibleHashtags.map((tag) => (
+                  <a
+                    key={tag}
+                    href={buildXHashtagUrl(tag)}
+                    target="_blank"
+                    rel="noreferrer"
+                    onClick={() => trackHashtagClick(tag, "x")}
+                    className="rounded-full px-4 py-2 text-sm underline underline-offset-2 transition hover:opacity-80"
+                    style={{ background: "rgba(201,94,42,0.1)", color: TOKENS.color.warm }}
+                  >
+                    #{normalizeHashtagForQuery(tag)}
+                  </a>
                 ))}
               </div>
             </div>
@@ -2163,6 +2430,18 @@ export default function MicrositioAcosoVecinal2026() {
           </div>
         </section>
       </main>
+
+      <div className="fixed bottom-3 left-2 right-2 z-40 md:hidden">
+        <SharePanel
+          surface="mobile-sticky"
+          sharePayload={sharePayload}
+          summaryText={SHARE_DEFAULT_SUMMARY}
+          quoteText={SHARE_DEFAULT_QUOTE}
+          compact
+          className="rounded-[20px] border bg-white/96 px-2 py-3 shadow-xl"
+          onAction={trackShareAction}
+        />
+      </div>
 
       {/* Footer */}
       <footer className="border-t" style={{ borderColor: TOKENS.color.line, background: TOKENS.color.paper2 }}>
