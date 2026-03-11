@@ -79,6 +79,47 @@ const sectionMeta = [
   { id: "recursos", label: "Recursos", icon: BookOpen },
 ];
 
+type PdfResource = {
+  id: string;
+  title: string;
+  description: string;
+  fileName: string;
+  href: string;
+};
+
+const PDF_RESOURCES: PdfResource[] = [
+  {
+    id: "ley-condominio",
+    title: "Ley de Propiedad en Condominio",
+    description: "Marco legal actualizado en la materia condominal que fundamenta derechos y obligaciones.",
+    fileName: "ley_propiedad_en_condominio.pdf",
+    href: "/pdfs/ley_propiedad_en_condominio.pdf",
+  },
+  {
+    id: "anti-acoso-cdmx",
+    title: "Libro completo: Anti Acoso CDMX",
+    description: "Manual 2026 exhaustivo sobre prevención y mecanismos de defensa contra el acoso vecinal.",
+    fileName: "libro_completo_anti_acoso_cdmx_2026.pdf",
+    href: "/pdfs/libro_completo_anti_acoso_cdmx_2026.pdf",
+  },
+  {
+    id: "guia-medidas-proteccion",
+    title: "Guía: Medidas de protección (CNPP)",
+    description: "Protocolo para medidas de protección bajo el Artículo 137 del Código Nacional de Procedimientos Penales.",
+    fileName: "guia_ejecucion_medidas_cnp_137.pdf",
+    href: "/pdfs/guia_ejecucion_medidas_cnp_137.pdf",
+  },
+  {
+    id: "acoso-china-cdmx",
+    title: "Estudio: Acoso vecinal (China y CDMX)",
+    description: "Comparativo de metodologías de acoso y uso de vibraciones en ambos contextos urbanos.",
+    fileName: "acoso_vecinal_china_cdmx.pdf",
+    href: "/pdfs/acoso_vecinal_china_cdmx.pdf",
+  },
+];
+
+const normalizePdfHref = (path: string) => (path.startsWith("/") ? path : `/${path}`);
+
 const DENUNCIA_ESCRITO = `ASUNTO: Denuncia y solicitud de actuación coordinada por acoso vecinal mediante ruido y vibración estructural.
 
 A quien corresponda:
@@ -387,8 +428,8 @@ export default function MicrositioAcosoVecinal2026() {
         copyTimeoutRef.current = null;
       }
       if (scrollRafRef.current !== null) {
-        window.cancelAnimationFrame(scrollRaf.current);
-        scrollRaf.current = null;
+        window.cancelAnimationFrame(scrollRafRef.current);
+        scrollRafRef.current = null;
       }
     };
   }, []);
@@ -403,6 +444,24 @@ export default function MicrositioAcosoVecinal2026() {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+  };
+
+  const downloadPdf = (resource: PdfResource) => {
+    const href = new URL(normalizePdfHref(resource.href), window.location.origin).toString();
+    try {
+      const link = document.createElement("a");
+      link.href = href;
+      link.download = resource.fileName;
+      link.rel = "noopener";
+      link.style.display = "none";
+      link.ariaLabel = `Descargar ${resource.title}`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (err) {
+      console.error("Error descargando PDF", err);
+      window.open(href, "_blank", "noopener");
+    }
   };
 
   const handlePrint = () => {
@@ -425,15 +484,21 @@ export default function MicrositioAcosoVecinal2026() {
         html { scroll-behavior: smooth; }
         * { box-sizing: border-box; }
         ::selection { background: rgba(201,94,42,.18); }
+        .print-anchor { display: inline-flex; align-items: center; }
 
         @media print {
           @page {
             margin: 2cm;
             size: letter;
           }
+
+          * {
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+          }
           
           body {
-            background: white !important;
+            background: #f6efe3 !important;
             color: black !important;
             font-size: 11pt;
           }
@@ -442,8 +507,17 @@ export default function MicrositioAcosoVecinal2026() {
             display: none !important;
           }
 
-          section {
+          .print-document {
+            width: 100% !important;
+            max-width: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+          }
+
+          .print-document section {
+            font-size: 10.8pt;
             page-break-inside: auto;
+            break-inside: auto;
             border-top: 1px solid #ddd !important;
             padding-top: 2cm !important;
             margin-top: 1cm !important;
@@ -451,16 +525,21 @@ export default function MicrositioAcosoVecinal2026() {
 
           h1, h2, h3 {
             page-break-after: avoid;
-            color: black !important;
+            page-break-before: avoid;
+            color: #18120e !important;
+          }
+
+          h4, h5, p, ul, ol, li, blockquote {
+            page-break-inside: avoid;
           }
 
           p, div {
-            color: #333 !important;
+            color: #2b2219 !important;
           }
 
           a {
             text-decoration: none;
-            color: black;
+            color: #8f2f1c !important;
           }
           
           a[href^="http"]:after {
@@ -469,10 +548,17 @@ export default function MicrositioAcosoVecinal2026() {
             font-style: italic;
           }
 
-          .rounded-[34px], .rounded-[28px], .rounded-[20px] {
+          .rounded-\[34px\], .rounded-\[28px\], .rounded-\[20px\], .rounded-\[30px\], .rounded-\[40px\] {
             border: 1px solid #ccc !important;
             box-shadow: none !important;
-            background: white !important;
+            background: #fffaf3 !important;
+            print-color-adjust: exact;
+            break-inside: avoid;
+          }
+
+          .rounded-\[34px\] .text-[13px],
+          .rounded-\[28px\] .text-\[11px\] {
+            color: #42342b !important;
           }
         }
       `}</style>
@@ -554,6 +640,14 @@ export default function MicrositioAcosoVecinal2026() {
                     {label}
                   </button>
                 ))}
+                <button
+                  onClick={handlePrint}
+                  className="mt-2 flex w-full items-center gap-3 px-4 py-3 rounded-xl text-left print-hide"
+                  style={{ color: TOKENS.color.ink }}
+                >
+                  <Download className="h-5 w-5" />
+                  <span>Imprimir página</span>
+                </button>
               </div>
             </motion.div>
           )}
@@ -615,7 +709,7 @@ export default function MicrositioAcosoVecinal2026() {
         </div>
       </header>
 
-      <main>
+      <main className="print-document">
         {/* PORTADA */}
         <section id="portada" style={{ ...paperStyle(false), ...TOKENS.sectionPad }}>
           <div className="mx-auto max-w-[1440px] px-4 md:px-6">
@@ -1309,73 +1403,35 @@ export default function MicrositioAcosoVecinal2026() {
           </header>
 
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {/* LEY CONDOMINAL */}
-            <a href="/pdfs/ley_propiedad_en_condominio.pdf" target="_blank" rel="noopener noreferrer"
-              className="group flex flex-col bg-white rounded-3xl p-8 transition-all hover:-translate-y-1 hover:shadow-xl"
-              style={{ boxShadow: TOKENS.shadow.soft }}>
-              <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl" style={{ background: "rgba(201,94,42,0.1)", color: TOKENS.color.warm }}>
-                <FileDown size={28} />
-              </div>
-              <h3 className="mb-3 text-xl font-bold" style={{ color: TOKENS.color.ink }}>Ley de Propiedad en Condominio</h3>
-              <p className="mb-6 flex-1 text-sm leading-relaxed" style={{ color: TOKENS.color.inkSoft }}>
-                Marco legal actualizado en la materia condominal que fundamenta derechos y obligaciones.
-              </p>
-              <div className="mt-auto flex items-center font-semibold" style={{ color: TOKENS.color.warm }}>
-                <span>Descargar PDF</span>
-                <ChevronRight className="ml-1 h-4 w-4 transition-transform group-hover:translate-x-1" />
-              </div>
-            </a>
-
-            {/* GUIA ANTI ACOSO COMPLETA */}
-            <a href="/pdfs/guia_anti_acoso_cdmx.pdf" target="_blank" rel="noopener noreferrer"
-              className="group flex flex-col bg-white rounded-3xl p-8 transition-all hover:-translate-y-1 hover:shadow-xl"
-              style={{ boxShadow: TOKENS.shadow.soft }}>
-              <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl" style={{ background: "rgba(201,94,42,0.1)", color: TOKENS.color.warm }}>
-                <FileDown size={28} />
-              </div>
-              <h3 className="mb-3 text-xl font-bold" style={{ color: TOKENS.color.ink }}>Libro Completo: Anti Acoso Vecinal</h3>
-              <p className="mb-6 flex-1 text-sm leading-relaxed" style={{ color: TOKENS.color.inkSoft }}>
-                Manual 2026 exhaustivo sobre prevención y mecanismos de defensa contra el acoso inmobiliario.
-              </p>
-              <div className="mt-auto flex items-center font-semibold" style={{ color: TOKENS.color.warm }}>
-                <span>Descargar PDF</span>
-                <ChevronRight className="ml-1 h-4 w-4 transition-transform group-hover:translate-x-1" />
-              </div>
-            </a>
-
-            {/* ARTICULO DE MEDIDAS (CNPP) */}
-            <a href="/pdfs/guia_medidas_proteccion.pdf" target="_blank" rel="noopener noreferrer"
-              className="group flex flex-col bg-white rounded-3xl p-8 transition-all hover:-translate-y-1 hover:shadow-xl"
-              style={{ boxShadow: TOKENS.shadow.soft }}>
-              <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl" style={{ background: "rgba(201,94,42,0.1)", color: TOKENS.color.warm }}>
-                <FileDown size={28} />
-              </div>
-              <h3 className="mb-3 text-xl font-bold" style={{ color: TOKENS.color.ink }}>Guía Ejecución Medidas (CNPP)</h3>
-              <p className="mb-6 flex-1 text-sm leading-relaxed" style={{ color: TOKENS.color.inkSoft }}>
-                Protocolo para medidas de protección real bajo el Artículo 137 del Código Nacional de Procedimientos Penales.
-              </p>
-              <div className="mt-auto flex items-center font-semibold" style={{ color: TOKENS.color.warm }}>
-                <span>Descargar PDF</span>
-                <ChevronRight className="ml-1 h-4 w-4 transition-transform group-hover:translate-x-1" />
-              </div>
-            </a>
-
-            {/* ESTUDIO COMPARATIVO CHINA */}
-            <a href="/pdfs/acoso_vecinal_china_cdmx.pdf" target="_blank" rel="noopener noreferrer"
-              className="group flex flex-col bg-white rounded-3xl p-8 transition-all hover:-translate-y-1 hover:shadow-xl"
-              style={{ boxShadow: TOKENS.shadow.soft }}>
-              <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl" style={{ background: "rgba(201,94,42,0.1)", color: TOKENS.color.warm }}>
-                <FileDown size={28} />
-              </div>
-              <h3 className="mb-3 text-xl font-bold" style={{ color: TOKENS.color.ink }}>Estudio: Acoso Vecinal (China y CDMX)</h3>
-              <p className="mb-6 flex-1 text-sm leading-relaxed" style={{ color: TOKENS.color.inkSoft }}>
-                Comparativo de metodologías de acoso y uso de tecnología como 'vibradores de piso' (Zhenlouqi) y sus equivalentes.
-              </p>
-              <div className="mt-auto flex items-center font-semibold" style={{ color: TOKENS.color.warm }}>
-                <span>Descargar PDF</span>
-                <ChevronRight className="ml-1 h-4 w-4 transition-transform group-hover:translate-x-1" />
-              </div>
-            </a>
+            {PDF_RESOURCES.map((resource) => (
+              <a
+                key={resource.id}
+                href={normalizePdfHref(resource.href)}
+                download={resource.fileName}
+                onClick={(event) => {
+                  event.preventDefault();
+                  downloadPdf(resource);
+                }}
+                className="group flex flex-col bg-white rounded-3xl p-8 text-left transition-all hover:-translate-y-1 hover:shadow-xl print-anchor"
+                rel="noopener"
+                aria-label={`Descargar ${resource.title}`}
+                style={{ boxShadow: TOKENS.shadow.soft }}
+              >
+                <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl" style={{ background: "rgba(201,94,42,0.1)", color: TOKENS.color.warm }}>
+                  <FileDown size={28} />
+                </div>
+                <h3 className="mb-3 text-xl font-bold" style={{ color: TOKENS.color.ink }}>
+                  {resource.title}
+                </h3>
+                <p className="mb-6 flex-1 text-sm leading-relaxed" style={{ color: TOKENS.color.inkSoft }}>
+                  {resource.description}
+                </p>
+                <div className="mt-auto flex items-center font-semibold" style={{ color: TOKENS.color.warm }}>
+                  <span>Descargar PDF</span>
+                  <ChevronRight className="ml-1 h-4 w-4 transition-transform group-hover:translate-x-1" />
+                </div>
+              </a>
+            ))}
           </div>
         </section>
       </main>
