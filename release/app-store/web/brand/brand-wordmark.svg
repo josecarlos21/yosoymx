@@ -1,0 +1,13 @@
+<svg width="1440" height="512" viewBox="0 0 1440 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1440" height="512" rx="96" fill="#F7F1E8"/>
+  <rect x="48" y="48" width="416" height="416" rx="112" fill="#2A1C12"/>
+  <rect x="80" y="80" width="352" height="352" rx="88" fill="#F7F1E8"/>
+  <path d="M140 164C140 139.699 159.699 120 184 120H328C378.81 120 420 161.19 420 212C420 239.244 408.07 263.657 389.152 280.311C408.07 296.964 420 321.377 420 348.621C420 399.431 378.81 440.621 328 440.621H184C159.699 440.621 140 420.922 140 396.621V164Z" fill="#8F2F1C"/>
+  <path d="M208 188H316C332.569 188 346 201.431 346 218C346 234.569 332.569 248 316 248H208V188Z" fill="#FFF8EF"/>
+  <path d="M208 292H324C344.987 292 362 309.013 362 330C362 350.987 344.987 368 324 368H208V292Z" fill="#FFF8EF"/>
+  <rect x="176" y="188" width="32" height="180" rx="14" fill="#E7B887"/>
+  <path d="M548 178H942" stroke="#8F2F1C" stroke-width="18" stroke-linecap="round" stroke-dasharray="2 30"/>
+  <text x="548" y="248" fill="#2A1C12" font-size="64" font-family="Georgia, 'Times New Roman', serif" font-weight="700">Gaceta Tu Espacio</text>
+  <text x="548" y="336" fill="#8F2F1C" font-size="84" font-family="Georgia, 'Times New Roman', serif" font-weight="700">Eje Central</text>
+  <text x="548" y="390" fill="#6A5647" font-size="28" font-family="Helvetica, Arial, sans-serif" letter-spacing="8">EDITORIAL CONDOMINIO · CIUDAD DE MÉXICO</text>
+</svg>

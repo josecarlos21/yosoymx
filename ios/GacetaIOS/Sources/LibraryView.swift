@@ -57,9 +57,13 @@ struct LibraryView: View {
                                     Text(resource.title)
                                         .font(.headline)
                                         .foregroundStyle(theme.ink)
+                                        .lineLimit(2)
+                                        .fixedSize(horizontal: false, vertical: true)
                                     Text(resource.description)
                                         .font(.subheadline)
                                         .foregroundStyle(theme.inkSoft)
+                                        .lineSpacing(2)
+                                        .fixedSize(horizontal: false, vertical: true)
                                 }
                                 .frame(maxWidth: .infinity, alignment: .leading)
                             }
@@ -84,16 +88,20 @@ struct LibraryView: View {
                             ForEach(content.gallery.items) { asset in
                                 VStack(alignment: .leading, spacing: 10) {
                                     AssetImageView(path: asset.fileName)
-                                        .frame(width: 280, height: 220)
+                                        .frame(width: singleColumn ? 300 : 280, height: 220)
                                         .clipShape(RoundedRectangle(cornerRadius: theme.radiusLarge, style: .continuous))
                                     Text(asset.title)
                                         .font(.headline)
                                         .foregroundStyle(theme.ink)
+                                        .lineLimit(2)
+                                        .fixedSize(horizontal: false, vertical: true)
                                     Text(asset.description)
                                         .font(.subheadline)
                                         .foregroundStyle(theme.inkSoft)
+                                        .lineSpacing(2)
+                                        .fixedSize(horizontal: false, vertical: true)
                                 }
-                                .frame(width: 280, alignment: .leading)
+                                .frame(width: singleColumn ? 300 : 280, alignment: .leading)
                             }
                         }
                     }
@@ -123,9 +131,13 @@ struct LibraryView: View {
                                     Text(source.title)
                                         .font(.headline)
                                         .foregroundStyle(theme.ink)
+                                        .lineLimit(2)
+                                        .fixedSize(horizontal: false, vertical: true)
                                     Text(source.note)
                                         .font(.subheadline)
                                         .foregroundStyle(theme.inkSoft)
+                                        .lineSpacing(2)
+                                        .fixedSize(horizontal: false, vertical: true)
                                 }
                                 .frame(maxWidth: .infinity, alignment: .leading)
                             }

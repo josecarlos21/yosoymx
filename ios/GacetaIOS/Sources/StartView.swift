@@ -220,7 +220,8 @@ struct StartView: View {
                     .font(.headline)
                 Text(title)
                     .font(.footnote.weight(.semibold))
-                    .lineLimit(1)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, 12)
@@ -266,6 +267,8 @@ struct StartView: View {
                             Text(item.label)
                                 .font(.subheadline.weight(.semibold))
                                 .foregroundStyle(theme.ink)
+                                .lineLimit(3)
+                                .fixedSize(horizontal: false, vertical: true)
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
                     }
@@ -295,6 +298,8 @@ struct StartView: View {
                                 Text(item.text)
                                     .font(.subheadline)
                                     .foregroundStyle(theme.inkSoft)
+                                    .lineSpacing(2)
+                                    .fixedSize(horizontal: false, vertical: true)
                             }
                         }
                     }
@@ -315,9 +320,13 @@ struct StartView: View {
                             Text(stat.label)
                                 .font(.headline)
                                 .foregroundStyle(theme.ink)
+                                .lineLimit(2)
+                                .fixedSize(horizontal: false, vertical: true)
                             Text(stat.description)
                                 .font(.footnote)
                                 .foregroundStyle(theme.inkSoft)
+                                .lineSpacing(2)
+                                .fixedSize(horizontal: false, vertical: true)
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
                     }
@@ -350,9 +359,11 @@ struct StartView: View {
                             Text(item.title)
                                 .font(.headline)
                                 .foregroundStyle(theme.ink)
-                            Text(item.text)
-                                .font(.subheadline)
-                                .foregroundStyle(theme.inkSoft)
+                                Text(item.text)
+                                    .font(.subheadline)
+                                    .foregroundStyle(theme.inkSoft)
+                                    .lineSpacing(2)
+                                    .fixedSize(horizontal: false, vertical: true)
                             if let sanction = item.sanction {
                                 Text(sanction)
                                     .font(.footnote.weight(.semibold))

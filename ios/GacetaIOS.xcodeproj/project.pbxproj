@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 63;
+	objectVersion = 77;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -17,6 +17,8 @@
 		269327D4080918218F35B608 /* Services.swift in Sources */ = {isa = PBXBuildFile; fileRef = 99B484973742A31658ECA614 /* Services.swift */; };
 		324B5BED62615E1B917E4609 /* RouteView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EAB3ED627E20A7519A96E483 /* RouteView.swift */; };
 		33F6E3D91DCE55F42E0BDE16 /* brand-config.json in Resources */ = {isa = PBXBuildFile; fileRef = 74A83FB6E184633183F6CF7A /* brand-config.json */; };
+		48550749F63995627A0D0A39 /* AppRouting.swift in Sources */ = {isa = PBXBuildFile; fileRef = 64152164D40F884463B7D580 /* AppRouting.swift */; };
+		4D87A5D17FFC02D35C65142C /* Services.swift in Sources */ = {isa = PBXBuildFile; fileRef = 99B484973742A31658ECA614 /* Services.swift */; };
 		59D47C0CE0F95F1A9437EE7D /* periodico-cover-01.png in Resources */ = {isa = PBXBuildFile; fileRef = 8E8FE1D9BC59FDCCE09B9B9A /* periodico-cover-01.png */; };
 		5EB7CFD8121BBD55E3691333 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 47CDA5E5914DF4FA99B4DA82 /* LaunchScreen.storyboard */; };
 		6FA497CE7CC8011E07B6F5D8 /* acoso_vecinal_china_cdmx.pdf in Resources */ = {isa = PBXBuildFile; fileRef = B36EB5E357CD28EE833D7343 /* acoso_vecinal_china_cdmx.pdf */; };
@@ -29,8 +31,10 @@
 		9C60412A11E0AD1BF762B525 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF7AAD1158349A9E37B9918F /* Models.swift */; };
 		9CB3D82BA594450E59848A95 /* CommunityView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEA05430A4C2395C1718CA7A /* CommunityView.swift */; };
 		9E9FA6DC07737EC225ECC2D1 /* StartView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3BDE060DCC1906780EEE9DC2 /* StartView.swift */; };
+		9F7463CEA9039F67FB00A329 /* AppRouting.swift in Sources */ = {isa = PBXBuildFile; fileRef = 64152164D40F884463B7D580 /* AppRouting.swift */; };
 		A32F80D1BE25D43328CD8CA3 /* dano-estructural.png in Resources */ = {isa = PBXBuildFile; fileRef = 6EA1BA0B330E523F8570C5EE /* dano-estructural.png */; };
 		A36FF59A6EABAD7CAC7504C3 /* GacetaIOSSharedDataTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 979DEEE71DCC7410B7203F0D /* GacetaIOSSharedDataTests.swift */; };
+		BB4D06187B318DE2184C7B23 /* community-fixtures.json in Resources */ = {isa = PBXBuildFile; fileRef = 0402169B0A59E1F6CE61057A /* community-fixtures.json */; };
 		C18BA0D2D1AED2228008F3B3 /* GacetaIOSApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1C61A946443C28C6C7654D4 /* GacetaIOSApp.swift */; };
 		C894A6AC2CB4F059AD888185 /* RootTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C773DEE4383D89402C784FA5 /* RootTabView.swift */; };
 		D75B6C36656AE9CB4D24B060 /* guia_ejecucion_medidas_cnp_137.pdf in Resources */ = {isa = PBXBuildFile; fileRef = 43ACF628C88372118DA45742 /* guia_ejecucion_medidas_cnp_137.pdf */; };
@@ -38,13 +42,15 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		289956EA992EAD1AF74B98EF /* GacetaIOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = GacetaIOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		0402169B0A59E1F6CE61057A /* community-fixtures.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "community-fixtures.json"; sourceTree = "<group>"; };
+		289956EA992EAD1AF74B98EF /* GacetaIOS.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = GacetaIOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		30E03FB7B5D6CBB657DD1E1D /* ley_propiedad_en_condominio.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; path = ley_propiedad_en_condominio.pdf; sourceTree = "<group>"; };
 		3BDE060DCC1906780EEE9DC2 /* StartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StartView.swift; sourceTree = "<group>"; };
 		43ACF628C88372118DA45742 /* guia_ejecucion_medidas_cnp_137.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; path = guia_ejecucion_medidas_cnp_137.pdf; sourceTree = "<group>"; };
 		47CDA5E5914DF4FA99B4DA82 /* LaunchScreen.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = LaunchScreen.storyboard; sourceTree = "<group>"; };
 		517C3F35198506C0FD478C06 /* LibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryView.swift; sourceTree = "<group>"; };
 		538DF67231E07C604C4F0BA8 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		64152164D40F884463B7D580 /* AppRouting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppRouting.swift; sourceTree = "<group>"; };
 		6EA1BA0B330E523F8570C5EE /* dano-estructural.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "dano-estructural.png"; sourceTree = "<group>"; };
 		7318C998902F935B97BC1471 /* AdminView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminView.swift; sourceTree = "<group>"; };
 		74A83FB6E184633183F6CF7A /* brand-config.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "brand-config.json"; sourceTree = "<group>"; };
@@ -56,7 +62,6 @@
 		8EC6455CE6EB21D2F0122964 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
 		979DEEE71DCC7410B7203F0D /* GacetaIOSSharedDataTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GacetaIOSSharedDataTests.swift; sourceTree = "<group>"; };
 		99B484973742A31658ECA614 /* Services.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services.swift; sourceTree = "<group>"; };
-		A299B94C2F61F7FD00929CAB /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; name = Info.plist; path = GacetaIOS/Info.plist; sourceTree = "<group>"; };
 		B1C61A946443C28C6C7654D4 /* GacetaIOSApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GacetaIOSApp.swift; sourceTree = "<group>"; };
 		B36EB5E357CD28EE833D7343 /* acoso_vecinal_china_cdmx.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; path = acoso_vecinal_china_cdmx.pdf; sourceTree = "<group>"; };
 		C773DEE4383D89402C784FA5 /* RootTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootTabView.swift; sourceTree = "<group>"; };
@@ -82,6 +87,7 @@
 			isa = PBXGroup;
 			children = (
 				74A83FB6E184633183F6CF7A /* brand-config.json */,
+				0402169B0A59E1F6CE61057A /* community-fixtures.json */,
 				85F26D641B7F5F3E6B8A10EF /* issue-content.json */,
 			);
 			name = content;
@@ -104,6 +110,7 @@
 			isa = PBXGroup;
 			children = (
 				7318C998902F935B97BC1471 /* AdminView.swift */,
+				64152164D40F884463B7D580 /* AppRouting.swift */,
 				CEA05430A4C2395C1718CA7A /* CommunityView.swift */,
 				E5F25DDE5A841D8A6D22092C /* Components.swift */,
 				B1C61A946443C28C6C7654D4 /* GacetaIOSApp.swift */,
@@ -132,7 +139,6 @@
 		DFCAE7F78A5F4C23C315C38C = {
 			isa = PBXGroup;
 			children = (
-				A299B94C2F61F7FD00929CAB /* Info.plist */,
 				6F0F769100DD3359E621B902 /* content */,
 				D81C676A496377D6014FE52A /* design */,
 				1507133A3DDFB2A0ED715923 /* GacetaIOSTests */,
@@ -221,6 +227,16 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+					4248024C9D0B44938FFDF395 = {
+						DevelopmentTeam = MZBY6QGSMU;
+						ProvisioningStyle = Automatic;
+					};
+					BF0B2E28FEA2342E76537B85 = {
+						DevelopmentTeam = MZBY6QGSMU;
+						ProvisioningStyle = Automatic;
+					};
+				};
 			};
 			buildConfigurationList = D83B724F59B1237EBCB17349 /* Build configuration list for PBXProject "GacetaIOS" */;
 			compatibilityVersion = "Xcode 14.0";
@@ -232,6 +248,7 @@
 			);
 			mainGroup = DFCAE7F78A5F4C23C315C38C;
 			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
@@ -250,6 +267,7 @@
 				5EB7CFD8121BBD55E3691333 /* LaunchScreen.storyboard in Resources */,
 				6FA497CE7CC8011E07B6F5D8 /* acoso_vecinal_china_cdmx.pdf in Resources */,
 				33F6E3D91DCE55F42E0BDE16 /* brand-config.json in Resources */,
+				BB4D06187B318DE2184C7B23 /* community-fixtures.json in Resources */,
 				A32F80D1BE25D43328CD8CA3 /* dano-estructural.png in Resources */,
 				D75B6C36656AE9CB4D24B060 /* guia_ejecucion_medidas_cnp_137.pdf in Resources */,
 				01276E2E72F8DBB5CBAEB85F /* impacto-psicologico.png in Resources */,
@@ -269,8 +287,10 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				9F7463CEA9039F67FB00A329 /* AppRouting.swift in Sources */,
 				A36FF59A6EABAD7CAC7504C3 /* GacetaIOSSharedDataTests.swift in Sources */,
 				7EB89980CCE5D041412099D7 /* Models.swift in Sources */,
+				4D87A5D17FFC02D35C65142C /* Services.swift in Sources */,
 				974AF46F584CD5049EFF4373 /* Theme.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -280,6 +300,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				F917176AC9E5AB64536E62F4 /* AdminView.swift in Sources */,
+				48550749F63995627A0D0A39 /* AppRouting.swift in Sources */,
 				9CB3D82BA594450E59848A95 /* CommunityView.swift in Sources */,
 				89C7B1DD42E5414194ED2D29 /* Components.swift in Sources */,
 				C18BA0D2D1AED2228008F3B3 /* GacetaIOSApp.swift in Sources */,
@@ -302,12 +323,6 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				DEVELOPMENT_TEAM = MZBY6QGSMU;
-				INFOPLIST_FILE = GacetaIOS/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = "Gaceta Eje Central";
-				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -336,6 +351,8 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				API_BASE_URL = "https://yosoymx.com/api";
+				API_ENVIRONMENT = production;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
@@ -365,8 +382,12 @@
 				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_ENTITLEMENTS = GacetaIOS/GacetaIOS.entitlements;
+				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
 				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = MZBY6QGSMU;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
@@ -383,13 +404,10 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_APIBaseURL = "https://yosoymx.com/api";
-				INFOPLIST_KEY_APIEnvironment = production;
-				INFOPLIST_KEY_CFBundleDisplayName = "Gaceta Eje Central";
-				INFOPLIST_KEY_UILaunchScreen_Generation = NO;
-				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = GacetaIOS/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				MARKETING_VERSION = 1.0.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -408,12 +426,6 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				DEVELOPMENT_TEAM = MZBY6QGSMU;
-				INFOPLIST_FILE = GacetaIOS/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = "Gaceta Eje Central";
-				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -427,6 +439,8 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				API_BASE_URL = "https://yosoymx.com/api";
+				API_ENVIRONMENT = production;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
@@ -456,8 +470,12 @@
 				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_ENTITLEMENTS = GacetaIOS/GacetaIOS.entitlements;
+				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = MZBY6QGSMU;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
@@ -468,13 +486,10 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_APIBaseURL = "https://yosoymx.com/api";
-				INFOPLIST_KEY_APIEnvironment = production;
-				INFOPLIST_KEY_CFBundleDisplayName = "Gaceta Eje Central";
-				INFOPLIST_KEY_UILaunchScreen_Generation = NO;
-				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = GacetaIOS/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				MARKETING_VERSION = 1.0.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.yosoymx.gacetaejecentral;

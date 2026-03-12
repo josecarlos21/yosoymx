@@ -42,7 +42,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { fetchCommunityPosts, sanitizeCommunityText, submitCommunityPost, type CommunityPost } from "@/lib/community";
 import { webThemeTokens } from "@/lib/design-tokens";
-import { applyBrandHead, fetchCurrentEdition } from "@/lib/edition-api";
+import {
+  applyBrandHead,
+  fetchCurrentEdition,
+  fetchEditionBySlug,
+  fetchIssueArchive,
+  type PublicIssueSummary,
+} from "@/lib/edition-api";
 import { fallbackBrandConfig, fallbackIssueContent, mergeBrandConfig, normalizePdfHref } from "@/lib/issue-content";
 import {
   buildSharePayload,
@@ -104,6 +110,11 @@ type SectionMeta = {
 };
 
 type CurrentEditionState = Awaited<ReturnType<typeof fetchCurrentEdition>>;
+type EditionRouteState = {
+  sectionId: string;
+  issueSlug: string | null;
+  isArchiveLanding: boolean;
+};
 
 const TOKENS = webThemeTokens;
 const MAX_NAME_LENGTH = 80;
@@ -443,9 +454,62 @@ function buildContactMailto(baseEmail: string, topic: string) {
   return `mailto:${baseEmail}?subject=${encodeURIComponent(topic)}`;
 }
 
+function resolveEditionRoute(pathname: string): EditionRouteState {
+  const normalizedPath = pathname.replace(/\/+$/, "") || "/";
+  if (normalizedPath === "/" || normalizedPath === "/gaceta-eje-central") {
+    return { sectionId: "portada", issueSlug: null, isArchiveLanding: false };
+  }
+
+  const segments = normalizedPath.split("/").filter(Boolean);
+  if (segments[0] !== "gaceta-eje-central") {
+    return { sectionId: "portada", issueSlug: null, isArchiveLanding: false };
+  }
+
+  if (segments[1] === "edicion" && typeof segments[2] === "string" && segments[2].trim()) {
+    return { sectionId: "portada", issueSlug: segments[2].trim(), isArchiveLanding: false };
+  }
+
+  switch (segments[1]) {
+    case "inicio":
+      return { sectionId: "portada", issueSlug: null, isArchiveLanding: false };
+    case "ruta":
+      return { sectionId: "rutas", issueSlug: null, isArchiveLanding: false };
+    case "biblioteca":
+      return { sectionId: "recursos", issueSlug: null, isArchiveLanding: false };
+    case "comunidad":
+      return { sectionId: "comentarios", issueSlug: null, isArchiveLanding: false };
+    case "contacto":
+      return { sectionId: "contacto", issueSlug: null, isArchiveLanding: false };
+    case "archivo":
+      return { sectionId: "archivo", issueSlug: null, isArchiveLanding: true };
+    case "recurso":
+      return { sectionId: "recursos", issueSlug: null, isArchiveLanding: false };
+    default:
+      return { sectionId: "portada", issueSlug: null, isArchiveLanding: false };
+  }
+}
+
+function buildEditionHistoryHref(slug: string, isCurrent: boolean) {
+  return isCurrent ? "/gaceta-eje-central" : `/gaceta-eje-central/edicion/${encodeURIComponent(slug)}`;
+}
+
+function formatEditionDate(raw: string | null) {
+  if (!raw) return "Sin fecha";
+  try {
+    return new Intl.DateTimeFormat("es-MX", { dateStyle: "long" }).format(new Date(raw));
+  } catch {
+    return raw;
+  }
+}
+
 export default function MicrositioAcosoVecinal2026() {
+  const routeState = useMemo(
+    () => (typeof window === "undefined" ? { sectionId: "portada", issueSlug: null, isArchiveLanding: false } : resolveEditionRoute(window.location.pathname)),
+    []
+  );
   const [currentEdition, setCurrentEdition] = useState<CurrentEditionState | null>(null);
   const [brandConfig, setBrandConfig] = useState(fallbackBrandConfig);
+  const [issueArchive, setIssueArchive] = useState<PublicIssueSummary[]>([]);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeSection, setActiveSection] = useState("portada");
   const [readProgress, setReadProgress] = useState(0);
@@ -518,7 +582,7 @@ export default function MicrositioAcosoVecinal2026() {
     let cancelled = false;
 
     const loadEdition = async () => {
-      const next = await fetchCurrentEdition();
+      const next = routeState.issueSlug ? await fetchEditionBySlug(routeState.issueSlug) : await fetchCurrentEdition();
       if (cancelled) return;
       setCurrentEdition(next);
       setBrandConfig(next.brand);
@@ -526,6 +590,21 @@ export default function MicrositioAcosoVecinal2026() {
     };
 
     void loadEdition();
+    return () => {
+      cancelled = true;
+    };
+  }, [routeState.issueSlug]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadArchive = async () => {
+      const next = await fetchIssueArchive(8);
+      if (cancelled) return;
+      setIssueArchive(next.items);
+    };
+
+    void loadArchive();
     return () => {
       cancelled = true;
     };
@@ -656,6 +735,20 @@ export default function MicrositioAcosoVecinal2026() {
     return () => observer.current?.disconnect();
   }, [sectionMeta]);
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const targetSection = routeState.sectionId;
+
+    const timeout = window.setTimeout(() => {
+      const element = document.getElementById(targetSection);
+      if (!element) return;
+      element.scrollIntoView({ behavior: "auto", block: "start" });
+      setActiveSection(targetSection);
+    }, 80);
+
+    return () => window.clearTimeout(timeout);
+  }, [issueContent.id, routeState.sectionId]);
+
   const copyToClipboard = async (text: string) => {
     if (!text) return;
     const result = await copyTextWithFallback(text);
@@ -733,7 +826,7 @@ export default function MicrositioAcosoVecinal2026() {
     } catch (error) {
       console.error("Error cargando comunidad", error);
       if (!isMountedRef.current) return;
-      setGeneralCommunityError("No se pudo cargar los contenidos comunitarios por ahora.");
+      setGeneralCommunityError("No pudimos actualizar la comunidad ahora. Mostramos la última versión disponible.");
     } finally {
       if (isMountedRef.current) setCommunityLoading(false);
     }
@@ -1076,6 +1169,16 @@ export default function MicrositioAcosoVecinal2026() {
                   <p className="mt-6 max-w-4xl text-lg leading-8 md:text-xl" style={{ fontFamily: TOKENS.font.editorial, color: "rgba(24,18,14,0.92)" }}>
                     {issueContent.cover.summary}
                   </p>
+
+                  {currentEdition?.item.status === "archived" ? (
+                    <div
+                      className="mt-5 inline-flex max-w-3xl items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold"
+                      style={{ borderColor: TOKENS.color.line, background: "rgba(255,250,243,0.92)", color: TOKENS.color.warm }}
+                    >
+                      <Archive className="h-4 w-4" />
+                      Archivo editorial: esta edición sigue disponible con enlace estable.
+                    </div>
+                  ) : null}
 
                   <div className="mt-6 grid gap-3 md:grid-cols-3">
                     {issueContent.cover.quickFacts.map((item) => (
@@ -1888,11 +1991,6 @@ export default function MicrositioAcosoVecinal2026() {
                           <span className="font-semibold" style={{ color: TOKENS.color.ink }}>{item.displayName}</span>
                           <span>{formatPostDate(item.createdAt)}</span>
                         </div>
-                        {item.source === "local" && (
-                          <div className="mb-2 inline-flex rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em]" style={{ background: "rgba(201,94,42,0.12)", color: TOKENS.color.warm }}>
-                            Muestra local
-                          </div>
-                        )}
                         <p className="text-sm leading-6" style={{ color: TOKENS.color.inkSoft }}>{item.content}</p>
                       </article>
                     ))
@@ -2045,7 +2143,6 @@ export default function MicrositioAcosoVecinal2026() {
                     <article key={item.id} className="rounded-[20px] border p-4" style={{ borderColor: TOKENS.color.line, background: "rgba(255,255,255,0.9)" }}>
                       <div className="mb-2 flex flex-wrap items-center justify-between gap-2 text-xs" style={{ color: TOKENS.color.inkSoft }}>
                         <span className="font-semibold" style={{ color: TOKENS.color.ink }}>{item.displayName}</span>
-                        {item.source === "local" && <span style={{ color: TOKENS.color.warm }}>Muestra local</span>}
                         <span>{formatPostDate(item.createdAt)}</span>
                       </div>
                       {item.category && <p className="mb-2 text-xs uppercase tracking-[0.12em]" style={{ color: TOKENS.color.warm }}>{item.category}</p>}
@@ -2098,6 +2195,64 @@ export default function MicrositioAcosoVecinal2026() {
             </div>
           </div>
         </section>
+
+        <section id="archivo" className="border-t" style={{ borderColor: TOKENS.color.line, ...paperStyle(false), ...TOKENS.sectionPad }}>
+          <div className="mx-auto max-w-[1440px] px-4 md:px-6">
+            <div className="mb-8">
+              <Eyebrow>Archivo editorial</Eyebrow>
+              <h2 className="mt-4 text-[clamp(2rem,4vw,3.5rem)] font-black tracking-tight" style={{ fontFamily: TOKENS.font.display, color: TOKENS.color.ink }}>
+                Ediciones publicadas y notas anteriores
+              </h2>
+              <p className="mt-4 max-w-3xl text-lg leading-8" style={{ color: TOKENS.color.inkSoft, fontFamily: TOKENS.font.editorial }}>
+                Cuando se publique una nueva edición, la vigente pasa al archivo con su propio enlace. Así la edición 2 puede salir sin perder la 1.
+              </p>
+            </div>
+
+            <div className="grid gap-4 lg:grid-cols-2">
+              {issueArchive.map((entry) => {
+                const isCurrent = entry.status === "published";
+                return (
+                  <a
+                    key={entry.id}
+                    href={buildEditionHistoryHref(entry.slug, isCurrent)}
+                    className="rounded-[24px] border p-5 transition hover:-translate-y-0.5 hover:bg-white"
+                    style={{ borderColor: TOKENS.color.line, background: "rgba(255,255,255,0.84)", boxShadow: TOKENS.shadow.soft }}
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div className="text-[11px] uppercase tracking-[0.24em]" style={{ color: TOKENS.color.warm }}>
+                        {entry.articleLabel || entry.label}
+                      </div>
+                      <Badge
+                        className="rounded-full border-0 shadow-none"
+                        style={{
+                          background: entry.status === "published" ? "rgba(201,94,42,0.12)" : "rgba(24,18,14,0.08)",
+                          color: entry.status === "published" ? TOKENS.color.warm : TOKENS.color.inkSoft,
+                        }}
+                      >
+                        {entry.status === "published" ? "Actual" : "Archivo"}
+                      </Badge>
+                    </div>
+                    <h3 className="mt-3 text-2xl font-black tracking-tight" style={{ fontFamily: TOKENS.font.display, color: TOKENS.color.ink }}>
+                      {entry.title}
+                    </h3>
+                    <p className="mt-3 text-sm leading-7" style={{ color: TOKENS.color.inkSoft }}>
+                      {entry.summary}
+                    </p>
+                    <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-sm">
+                      <span style={{ color: TOKENS.color.inkSoft }}>
+                        {entry.location} · {formatEditionDate(entry.publishedAt)}
+                      </span>
+                      <span className="inline-flex items-center gap-2 font-semibold" style={{ color: TOKENS.color.warm }}>
+                        {isCurrent ? "Abrir edición actual" : "Abrir edición"}
+                        <ChevronRight className="h-4 w-4" />
+                      </span>
+                    </div>
+                  </a>
+                );
+              })}
+            </div>
+          </div>
+        </section>
       </main>
 
       <footer className="border-t" style={{ borderColor: TOKENS.color.line, background: TOKENS.color.paperAlt }}>
@@ -2108,7 +2263,10 @@ export default function MicrositioAcosoVecinal2026() {
             </div>
             <div>Artículo oficial, archivo real, fuentes verificables visibles.</div>
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <a href="/gaceta-eje-central/archivo" className="rounded-full border px-3 py-1.5 text-xs font-semibold" style={{ borderColor: TOKENS.color.line, color: TOKENS.color.warm }}>
+              Ver archivo
+            </a>
             {issueContent.metadata.footerBadges.map((badge) => (
               <Badge key={badge} className="rounded-full border-0 shadow-none" style={{ background: "rgba(255,255,255,0.9)", color: TOKENS.color.inkSoft }}>
                 {badge}

@@ -1,0 +1,37 @@
+{
+  "customScheme": "gacetaeje://",
+  "bundleID": "com.yosoymx.gacetaejecentral",
+  "teamID": "MZBY6QGSMU",
+  "routes": [
+    {
+      "custom": "gacetaeje://inicio",
+      "universal": "https://yosoymx.com/gaceta-eje-central",
+      "screen": "Inicio"
+    },
+    {
+      "custom": "gacetaeje://ruta",
+      "universal": "https://yosoymx.com/gaceta-eje-central/ruta",
+      "screen": "Ruta"
+    },
+    {
+      "custom": "gacetaeje://biblioteca",
+      "universal": "https://yosoymx.com/gaceta-eje-central/biblioteca",
+      "screen": "Biblioteca"
+    },
+    {
+      "custom": "gacetaeje://comunidad",
+      "universal": "https://yosoymx.com/gaceta-eje-central/comunidad",
+      "screen": "Comunidad"
+    },
+    {
+      "custom": "gacetaeje://contacto",
+      "universal": "https://yosoymx.com/gaceta-eje-central/contacto",
+      "screen": "Soporte y ajustes"
+    },
+    {
+      "custom": "gacetaeje://recurso/ley-condominio",
+      "universal": "https://yosoymx.com/gaceta-eje-central/recurso/ley-condominio",
+      "screen": "Biblioteca > Documento"
+    }
+  ]
+}

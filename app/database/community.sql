@@ -61,6 +61,7 @@ CREATE TABLE IF NOT EXISTS issues (
   label TEXT NOT NULL,
   location TEXT NOT NULL,
   theme_line TEXT NOT NULL,
+  social_asset_id TEXT,
   content_json TEXT NOT NULL,
   brand_overrides_json TEXT,
   created_at TEXT NOT NULL,

@@ -1,0 +1,7 @@
+No login required.
+
+La sección Comunidad usa moderación previa. Ningún comentario o aporte se publica de forma instantánea.
+
+No se requiere cuenta social para usar la app ni para consultar la edición.
+
+La navegación principal tiene cuatro tabs públicas: Inicio, Ruta, Biblioteca y Comunidad. El acceso a soporte y ajustes vive fuera del tab bar.

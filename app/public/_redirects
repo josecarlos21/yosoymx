@@ -1,2 +1,7 @@
 /admin /index.html 200
 /admin/* /index.html 200
+/gaceta-eje-central /index.html 200
+/gaceta-eje-central/* /index.html 200
+/gaceta-eje-central/edicion/* /index.html 200
+/gaceta-eje-central/archivo /index.html 200
+/privacy /privacy/index.html 200

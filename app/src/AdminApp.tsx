@@ -178,6 +178,225 @@ function safeCopy(text: string) {
   void navigator.clipboard.writeText(text);
 }
 
+type MediaRule = {
+  label: string;
+  hint: string;
+  recommendedRatio?: number;
+  recommendedSize?: { width: number; height: number };
+  minSquare?: number;
+  requiresAlt: boolean;
+  maxBytes: number;
+  accepts: string[];
+};
+
+const MEDIA_RULES: Record<MediaAsset["kind"], MediaRule> = {
+  image: {
+    label: "Imagen editorial",
+    hint: "PNG o JPG recomendado. Prioriza imágenes limpias, con buen recorte y alt claro.",
+    requiresAlt: true,
+    maxBytes: 8_000_000,
+    accepts: ["image/png", "image/jpeg", "image/webp"],
+  },
+  og: {
+    label: "OG social",
+    hint: "Usa proporción 1200 × 630 para compartir en web y mensajería.",
+    recommendedRatio: 1200 / 630,
+    recommendedSize: { width: 1200, height: 630 },
+    requiresAlt: true,
+    maxBytes: 5_000_000,
+    accepts: ["image/png", "image/jpeg", "image/webp"],
+  },
+  icon: {
+    label: "Icono web",
+    hint: "Usa PNG o SVG cuadrado; para release web conviene partir de 512 × 512 o mayor.",
+    minSquare: 512,
+    requiresAlt: false,
+    maxBytes: 2_000_000,
+    accepts: ["image/png", "image/svg+xml"],
+  },
+  logo: {
+    label: "Logo / wordmark",
+    hint: "Usa SVG o PNG limpio para masthead y piezas de marca.",
+    requiresAlt: false,
+    maxBytes: 3_000_000,
+    accepts: ["image/png", "image/svg+xml"],
+  },
+  pdf: {
+    label: "PDF",
+    hint: "Documento PDF listo para lectura y descarga.",
+    requiresAlt: false,
+    maxBytes: 25_000_000,
+    accepts: ["application/pdf"],
+  },
+  document: {
+    label: "Documento",
+    hint: "Archivo documental de soporte. Usa PDF salvo que exista un motivo claro para otro formato.",
+    requiresAlt: false,
+    maxBytes: 25_000_000,
+    accepts: ["application/pdf"],
+  },
+};
+
+function fileExtension(file: File) {
+  const extension = file.name.split(".").pop();
+  return extension ? extension.toLowerCase() : "";
+}
+
+function looksLikeAcceptedFile(file: File, accepts: string[]) {
+  if (file.type && accepts.includes(file.type)) return true;
+  const extension = fileExtension(file);
+  if (!extension) return false;
+  if (accepts.includes("image/svg+xml") && extension === "svg") return true;
+  if (accepts.includes("image/png") && extension === "png") return true;
+  if (accepts.includes("image/jpeg") && ["jpg", "jpeg"].includes(extension)) return true;
+  if (accepts.includes("image/webp") && extension === "webp") return true;
+  if (accepts.includes("application/pdf") && extension === "pdf") return true;
+  return false;
+}
+
+async function readImageDimensions(file: File) {
+  if (!file.type.startsWith("image/") && fileExtension(file) !== "svg") {
+    return null;
+  }
+
+  return await new Promise<{ width: number; height: number } | null>((resolve) => {
+    const objectUrl = URL.createObjectURL(file);
+    const image = new Image();
+    image.onload = () => {
+      resolve({ width: image.naturalWidth, height: image.naturalHeight });
+      URL.revokeObjectURL(objectUrl);
+    };
+    image.onerror = () => {
+      resolve(null);
+      URL.revokeObjectURL(objectUrl);
+    };
+    image.src = objectUrl;
+  });
+}
+
+async function validateMediaFile(kind: MediaAsset["kind"], file: File, alt: string) {
+  const rule = MEDIA_RULES[kind];
+  const trimmedAlt = alt.trim();
+
+  if (!looksLikeAcceptedFile(file, rule.accepts)) {
+    return `${rule.label}: formato inválido. ${rule.hint}`;
+  }
+
+  if (file.size > rule.maxBytes) {
+    return `${rule.label}: el archivo es demasiado pesado. Límite sugerido ${Math.round(rule.maxBytes / 1_000_000)} MB.`;
+  }
+
+  if (rule.requiresAlt && !trimmedAlt) {
+    return `${rule.label}: el campo alt es obligatorio.`;
+  }
+
+  const dimensions = await readImageDimensions(file);
+  if (rule.minSquare && dimensions && (dimensions.width < rule.minSquare || dimensions.height < rule.minSquare)) {
+    return `${rule.label}: usa un archivo cuadrado de al menos ${rule.minSquare}px.`;
+  }
+
+  if (rule.recommendedSize && dimensions) {
+    const ratio = dimensions.width / Math.max(1, dimensions.height);
+    if (Math.abs(ratio - (rule.recommendedRatio ?? ratio)) > 0.03) {
+      return `${rule.label}: la proporción esperada es ${rule.recommendedSize.width} × ${rule.recommendedSize.height}.`;
+    }
+  }
+
+  return "";
+}
+
+type AdminPreflightReport = {
+  status: "blocked" | "ready" | "caution";
+  blockers: string[];
+  warnings: string[];
+};
+
+function isValidUrlOrPath(value: string) {
+  if (!value.trim()) return false;
+  if (value.startsWith("/")) return true;
+  try {
+    const url = new URL(value);
+    return url.protocol === "http:" || url.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
+function collectTextLeaves(value: unknown, bag: string[] = []) {
+  if (typeof value === "string") {
+    bag.push(value);
+    return bag;
+  }
+  if (Array.isArray(value)) {
+    value.forEach((entry) => collectTextLeaves(entry, bag));
+    return bag;
+  }
+  if (value && typeof value === "object") {
+    Object.values(value as Record<string, unknown>).forEach((entry) => collectTextLeaves(entry, bag));
+  }
+  return bag;
+}
+
+function buildAdminPreflight(
+  issue: EditionPayload | null,
+  issues: EditionPayload[],
+  mediaAssets: MediaAsset[],
+  brand: BrandConfig
+): AdminPreflightReport {
+  if (!issue) {
+    return { status: "blocked", blockers: ["Selecciona una edición para revisar su publicación."], warnings: [] };
+  }
+
+  const blockers: string[] = [];
+  const warnings: string[] = [];
+  const content = issue.contentPayload;
+  const duplicateSlug = issues.some((entry) => entry.id !== issue.id && entry.slug.trim().toLowerCase() === issue.slug.trim().toLowerCase());
+  if (!issue.slug.trim()) blockers.push("Falta slug.");
+  if (duplicateSlug) blockers.push("El slug ya existe en otra edición.");
+  if (!issue.label.trim()) blockers.push("Falta label editorial.");
+  if (!issue.location.trim()) blockers.push("Falta ubicación.");
+  if (!issue.themeLine.trim()) blockers.push("Falta línea temática.");
+  if (!content.metadata.publishedDateISO || Number.isNaN(Date.parse(content.metadata.publishedDateISO))) blockers.push("La fecha de publicación no es válida.");
+  if (!content.share.title.trim()) blockers.push("Falta título de share.");
+  if (!content.share.summary.trim()) blockers.push("Falta resumen de share.");
+  if (!content.share.quote.trim()) blockers.push("Falta quote de share.");
+  if (!content.metadata.heroImage.src.trim() || !isValidUrlOrPath(content.metadata.heroImage.src)) blockers.push("La imagen principal necesita una ruta válida.");
+  if (!content.metadata.heroImage.alt.trim()) blockers.push("La imagen principal necesita alt.");
+  if (!content.metadata.heroImage.caption.trim()) blockers.push("La imagen principal necesita caption.");
+  if (!content.sources.items.length) blockers.push("Falta al menos una fuente visible.");
+  if (content.sources.items.some((item) => !item.href?.trim() || !isValidUrlOrPath(item.href))) blockers.push("Todas las fuentes deben tener href válido.");
+  if (!content.routes.authorities.length) blockers.push("Falta al menos una autoridad institucional.");
+  if (content.routes.authorities.some((item) => !item.href?.trim() || !isValidUrlOrPath(item.href))) blockers.push("Todas las autoridades deben tener href válido.");
+  if (!content.resources.pdfs.length) blockers.push("Falta al menos un PDF o recurso documental.");
+  if (content.resources.pdfs.some((item) => !item.href?.trim() || !isValidUrlOrPath(item.href))) blockers.push("Todos los recursos PDF deben tener href válido.");
+  if (content.gallery.items.some((item) => !item.title?.trim() || !item.description?.trim() || !item.fileName?.trim() || !isValidUrlOrPath(item.fileName))) {
+    blockers.push("Las piezas de galería deben tener título, descripción y ruta válida.");
+  }
+
+  const socialAssetId = issue.socialAssetId?.trim() || brand.defaultOgAssetId.trim();
+  if (!socialAssetId) {
+    blockers.push("Falta asset social para miniatura.");
+  } else if (!mediaAssets.some((asset) => asset.id === socialAssetId && asset.status !== "replaced")) {
+    blockers.push("El asset social seleccionado no existe en la media library.");
+  }
+
+  const combinedText = collectTextLeaves(content)
+    .join(" \n ")
+    .toLowerCase();
+  if (["placeholder", "demo", "muestra local", "pendiente"].some((marker) => combinedText.includes(marker))) {
+    blockers.push("El contenido todavía contiene marcas de demo o pendiente.");
+  }
+
+  if (!content.gallery.items.length) warnings.push("No hay galería visual cargada.");
+  warnings.push("La verificación profunda de rutas internas y archivos corre de nuevo al publicar.");
+
+  return {
+    status: blockers.length ? "blocked" : warnings.length ? "caution" : "ready",
+    blockers: Array.from(new Set(blockers)),
+    warnings: Array.from(new Set(warnings)),
+  };
+}
+
 /* eslint-disable no-unused-vars */
 interface FieldChangeHandler {
   (path: string[], nextValue: JsonValue): void;
@@ -341,6 +560,15 @@ export default function AdminApp() {
     () => issues.find((item) => item.id === selectedIssueId) ?? editableIssue,
     [editableIssue, issues, selectedIssueId]
   );
+  const issueReadOnly = editableIssue?.status === "published" || editableIssue?.status === "archived";
+  const publishPreflight = useMemo(
+    () => buildAdminPreflight(editableIssue, issues, mediaAssets, brandConfig),
+    [editableIssue, issues, mediaAssets, brandConfig]
+  );
+  const socialMediaOptions = useMemo(
+    () => mediaAssets.filter((asset) => asset.status !== "replaced" && (asset.kind === "og" || asset.kind === "image")),
+    [mediaAssets]
+  );
 
   useEffect(() => {
     const stored = readStoredToken();
@@ -467,16 +695,23 @@ export default function AdminApp() {
     }
   };
 
-  const handleSaveIssue = async () => {
+  const handleSaveIssue = async (nextStatus?: EditionPayload["status"]) => {
     if (!token || !editableIssue) return;
     setIsSavingIssue(true);
     setError("");
     setMessage("");
     try {
-      const item = await updateAdminIssue(token, editableIssue);
+      const payload = nextStatus ? { ...editableIssue, status: nextStatus } : editableIssue;
+      const item = await updateAdminIssue(token, payload);
       setEditableIssue(cloneValue(item));
       setIssues((current) => current.map((entry) => (entry.id === item.id ? item : entry)));
-      setMessage("Edición guardada.");
+      setMessage(
+        nextStatus === "review_ready"
+          ? "Edición lista para revisión."
+          : nextStatus === "draft"
+            ? "Borrador guardado."
+            : "Edición guardada."
+      );
       await refreshAll();
     } catch (caught) {
       setError((caught as Error).message);
@@ -523,6 +758,11 @@ export default function AdminApp() {
     if (!token || !uploadFile) return;
     setError("");
     setMessage("");
+    const validationMessage = await validateMediaFile(uploadKind, uploadFile, uploadAlt);
+    if (validationMessage) {
+      setError(validationMessage);
+      return;
+    }
     try {
       await uploadAdminMedia(token, {
         kind: uploadKind,
@@ -544,6 +784,11 @@ export default function AdminApp() {
     if (!token) return;
     setError("");
     setMessage("");
+    const validationMessage = await validateMediaFile(asset.kind, file, asset.alt);
+    if (validationMessage) {
+      setError(validationMessage);
+      return;
+    }
     try {
       await replaceAdminMedia(token, asset.id, {
         file,
@@ -732,13 +977,20 @@ export default function AdminApp() {
               <CardHeader className="grid gap-4 xl:grid-cols-[1fr_auto] xl:items-start">
                 <div className="grid gap-3">
                   <CardTitle className="text-3xl font-black">Edición seleccionada</CardTitle>
-                  <div className="grid gap-3 md:grid-cols-3">
+                  {issueReadOnly ? (
+                    <div className="rounded-2xl border border-black/10 bg-neutral-50 px-4 py-3 text-sm leading-6 text-neutral-700">
+                      Esta edición ya está <span className="font-semibold">{editableIssue.status}</span> y quedó de solo lectura.
+                      Si necesitas corregirla, crea un nuevo borrador desde esta edición.
+                    </div>
+                  ) : null}
+                  <div className="grid gap-3 md:grid-cols-4">
                     <label className="grid gap-2">
                       <span className="text-sm font-semibold">Slug</span>
                       <input
                         value={editableIssue.slug}
                         onChange={(event) => setEditableIssue((current) => current ? { ...current, slug: event.target.value } : current)}
                         className="rounded-2xl border border-black/10 bg-white px-3 py-2.5 text-sm"
+                        disabled={issueReadOnly}
                       />
                     </label>
                     <label className="grid gap-2">
@@ -747,6 +999,7 @@ export default function AdminApp() {
                         value={editableIssue.label}
                         onChange={(event) => setEditableIssue((current) => current ? { ...current, label: event.target.value } : current)}
                         className="rounded-2xl border border-black/10 bg-white px-3 py-2.5 text-sm"
+                        disabled={issueReadOnly}
                       />
                     </label>
                     <label className="grid gap-2">
@@ -755,39 +1008,135 @@ export default function AdminApp() {
                         value={editableIssue.location}
                         onChange={(event) => setEditableIssue((current) => current ? { ...current, location: event.target.value } : current)}
                         className="rounded-2xl border border-black/10 bg-white px-3 py-2.5 text-sm"
+                        disabled={issueReadOnly}
                       />
                     </label>
+                    <label className="grid gap-2">
+                      <span className="text-sm font-semibold">Miniatura social</span>
+                      <select
+                        value={editableIssue.socialAssetId ?? ""}
+                        onChange={(event) =>
+                          setEditableIssue((current) =>
+                            current ? { ...current, socialAssetId: event.target.value || null } : current
+                          )
+                        }
+                        className="rounded-2xl border border-black/10 bg-white px-3 py-2.5 text-sm"
+                        disabled={issueReadOnly}
+                      >
+                        <option value="">Usar OG por defecto de marca</option>
+                        {socialMediaOptions.map((asset) => (
+                          <option key={asset.id} value={asset.id}>
+                            {asset.kind.toUpperCase()} · {asset.originalFileName || asset.id}
+                          </option>
+                        ))}
+                      </select>
+                      <span className="text-xs text-neutral-500">
+                        Fallback actual de marca: {brandConfig.defaultOgAssetId || "sin asset por defecto"}
+                      </span>
+                    </label>
                   </div>
-                  <label className="grid gap-2">
-                    <span className="text-sm font-semibold">Línea temática</span>
-                    <input
-                      value={editableIssue.themeLine}
-                      onChange={(event) => setEditableIssue((current) => current ? { ...current, themeLine: event.target.value } : current)}
-                      className="rounded-2xl border border-black/10 bg-white px-3 py-2.5 text-sm"
-                    />
-                  </label>
+                  <div className="grid gap-3 md:grid-cols-2">
+                    <label className="grid gap-2">
+                      <span className="text-sm font-semibold">Línea temática</span>
+                      <input
+                        value={editableIssue.themeLine}
+                        onChange={(event) => setEditableIssue((current) => current ? { ...current, themeLine: event.target.value } : current)}
+                        className="rounded-2xl border border-black/10 bg-white px-3 py-2.5 text-sm"
+                        disabled={issueReadOnly}
+                      />
+                    </label>
+                    <div className="rounded-2xl border border-black/10 bg-[#faf5ee] px-4 py-3">
+                      <div className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-800">Estado editorial</div>
+                      <div className="mt-2 flex items-center gap-2">
+                        <Badge variant="secondary" className="capitalize">
+                          {editableIssue.status}
+                        </Badge>
+                        <span className="text-sm text-neutral-600">
+                          {publishPreflight.status === "blocked"
+                            ? "Bloqueado"
+                            : publishPreflight.status === "caution"
+                              ? "Listo con advertencias"
+                              : "Listo"}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
                 <div className="flex flex-wrap gap-2 xl:justify-end">
-                  <Button variant="outline" onClick={() => window.open(`/${editableIssue.slug}`, "_blank", "noopener,noreferrer")}>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      const publicHref =
+                        editableIssue.status === "published"
+                          ? "/gaceta-eje-central"
+                          : editableIssue.status === "archived"
+                            ? `/gaceta-eje-central/edicion/${encodeURIComponent(editableIssue.slug)}`
+                            : null;
+                      if (publicHref) {
+                        window.open(publicHref, "_blank", "noopener,noreferrer");
+                      }
+                    }}
+                    disabled={editableIssue.status !== "published" && editableIssue.status !== "archived"}
+                  >
                     <Eye className="mr-2 h-4 w-4" />
-                    Ver slug
+                    Ver publicación
                   </Button>
                   <Button variant="outline" onClick={() => void handleArchiveIssue()} disabled={isSavingIssue}>
                     <Archive className="mr-2 h-4 w-4" />
                     Archivar
                   </Button>
-                  <Button variant="outline" onClick={() => void handleSaveIssue()} disabled={isSavingIssue}>
+                  <Button variant="outline" onClick={() => void handleSaveIssue("draft")} disabled={isSavingIssue || issueReadOnly}>
                     <Save className="mr-2 h-4 w-4" />
-                    Guardar
+                    Guardar borrador
                   </Button>
-                  <Button className="bg-[#8f2f1c] text-white hover:bg-[#7a2818]" onClick={() => void handlePublishIssue()} disabled={isSavingIssue}>
+                  <Button variant="outline" onClick={() => void handleSaveIssue("review_ready")} disabled={isSavingIssue || issueReadOnly}>
+                    <ShieldCheck className="mr-2 h-4 w-4" />
+                    {editableIssue.status === "review_ready" ? "Guardar revisión" : "Lista para revisión"}
+                  </Button>
+                  <Button
+                    className="bg-[#8f2f1c] text-white hover:bg-[#7a2818]"
+                    onClick={() => void handlePublishIssue()}
+                    disabled={isSavingIssue || issueReadOnly || editableIssue.status !== "review_ready" || publishPreflight.blockers.length > 0}
+                  >
                     <FolderSync className="mr-2 h-4 w-4" />
                     Publicar
                   </Button>
                 </div>
               </CardHeader>
               <CardContent className="grid gap-5">
+                <div
+                  className={`grid gap-3 rounded-2xl border px-4 py-4 ${
+                    publishPreflight.status === "blocked"
+                      ? "border-red-200 bg-red-50"
+                      : publishPreflight.status === "caution"
+                        ? "border-amber-200 bg-amber-50"
+                        : "border-emerald-200 bg-emerald-50"
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="text-sm font-semibold">
+                      Preflight editorial {publishPreflight.status === "blocked" ? "bloqueado" : publishPreflight.status === "caution" ? "con advertencias" : "listo"}
+                    </div>
+                    <div className="text-xs text-neutral-600">
+                      Bloqueos: {publishPreflight.blockers.length} · Advertencias: {publishPreflight.warnings.length}
+                    </div>
+                  </div>
+                  {publishPreflight.blockers.length ? (
+                    <div className="grid gap-1 text-sm text-red-800">
+                      {publishPreflight.blockers.map((item) => (
+                        <div key={item}>• {item}</div>
+                      ))}
+                    </div>
+                  ) : null}
+                  {publishPreflight.warnings.length ? (
+                    <div className="grid gap-1 text-sm text-amber-900">
+                      {publishPreflight.warnings.map((item) => (
+                        <div key={item}>• {item}</div>
+                      ))}
+                    </div>
+                  ) : null}
+                </div>
                 <div className="flex items-center gap-3 rounded-2xl border border-black/10 bg-[#faf5ee] px-4 py-3">
                   <Search className="h-4 w-4 text-amber-800" />
                   <input
@@ -795,9 +1144,10 @@ export default function AdminApp() {
                     onChange={(event) => setFieldQuery(event.target.value)}
                     placeholder="Buscar campo, sección o texto dentro del contenido"
                     className="w-full bg-transparent text-sm outline-none"
+                    disabled={issueReadOnly}
                   />
                 </div>
-                <div className="grid gap-4">
+                <div className={`grid gap-4 ${issueReadOnly ? "pointer-events-none opacity-65" : ""}`}>
                   <FieldEditor
                     value={editableIssue.contentPayload as unknown as JsonValue}
                     path={["contentPayload"]}
@@ -806,6 +1156,11 @@ export default function AdminApp() {
                     onAddArrayItem={handleAddArrayItem}
                     onRemoveArrayItem={handleRemoveArrayItem}
                   />
+                </div>
+                <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-950">
+                  Cada edición publicada conserva su enlace estable en
+                  <span className="mx-1 font-semibold">/gaceta-eje-central/edicion/{editableIssue.slug}</span>.
+                  Si publicas una nueva, la anterior se mueve al archivo sin perder su URL, siempre que el slug sea único.
                 </div>
               </CardContent>
             </Card>
@@ -837,6 +1192,10 @@ export default function AdminApp() {
                       <span className="text-sm font-semibold">Archivo</span>
                       <input type="file" onChange={(event) => setUploadFile(event.target.files?.[0] ?? null)} className="rounded-2xl border border-black/10 bg-white px-3 py-2 text-sm" />
                     </label>
+                  </div>
+                  <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                    <div className="font-semibold">{MEDIA_RULES[uploadKind].label}</div>
+                    <div className="mt-1 leading-6">{MEDIA_RULES[uploadKind].hint}</div>
                   </div>
                   <label className="grid gap-2">
                     <span className="text-sm font-semibold">Alt</span>
@@ -905,6 +1264,14 @@ export default function AdminApp() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="grid gap-4">
+                  <div className="grid gap-3 rounded-3xl border border-black/10 bg-[#faf5ee] p-4 text-sm text-neutral-700">
+                    <div className="font-semibold text-neutral-900">Slots web recomendados</div>
+                    <div>Favicon PNG: 32 × 32 y 48 × 48.</div>
+                    <div>Apple Touch Icon: 180 × 180 PNG.</div>
+                    <div>Manifest icon: 512 × 512 PNG.</div>
+                    <div>OG por defecto y OG editorial: 1200 × 630.</div>
+                    <div>Usa alt/caption en imágenes editoriales y OG para mantener trazabilidad.</div>
+                  </div>
                   <label className="grid gap-2">
                     <span className="text-sm font-semibold">Site name</span>
                     <input value={brandConfig.siteName} onChange={(event) => setBrandConfig((current) => ({ ...current, siteName: event.target.value }))} className="rounded-2xl border border-black/10 bg-white px-3 py-2.5 text-sm" />

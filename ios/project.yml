@@ -5,15 +5,18 @@ options:
 settings:
   base:
     SWIFT_VERSION: 6.0
+    CODE_SIGN_STYLE: Automatic
+    DEVELOPMENT_TEAM: MZBY6QGSMU
+    CODE_SIGN_ENTITLEMENTS: GacetaIOS/GacetaIOS.entitlements
     PRODUCT_BUNDLE_IDENTIFIER: com.yosoymx.gacetaejecentral
+    MARKETING_VERSION: 1.0.0
+    CURRENT_PROJECT_VERSION: 1
     IPHONEOS_DEPLOYMENT_TARGET: "18.0"
     TARGETED_DEVICE_FAMILY: "1,2"
-    GENERATE_INFOPLIST_FILE: YES
-    INFOPLIST_KEY_CFBundleDisplayName: Gaceta Eje Central
-    INFOPLIST_KEY_UILaunchScreen_Generation: NO
-    INFOPLIST_KEY_UILaunchStoryboardName: LaunchScreen
-    INFOPLIST_KEY_APIBaseURL: https://yosoymx.com/api
-    INFOPLIST_KEY_APIEnvironment: production
+    GENERATE_INFOPLIST_FILE: NO
+    INFOPLIST_FILE: GacetaIOS/Info.plist
+    API_BASE_URL: https://yosoymx.com/api
+    API_ENVIRONMENT: production
 targets:
   GacetaIOS:
     type: application
@@ -23,6 +26,8 @@ targets:
       - path: GacetaIOS/Resources
         buildPhase: resources
       - path: ../app/shared/content/issue-content.json
+        buildPhase: resources
+      - path: ../app/shared/content/community-fixtures.json
         buildPhase: resources
       - path: ../app/shared/content/brand-config.json
         buildPhase: resources
@@ -37,7 +42,9 @@ targets:
     platform: iOS
     sources:
       - path: GacetaIOSTests
+      - path: GacetaIOS/Sources/AppRouting.swift
       - path: GacetaIOS/Sources/Models.swift
+      - path: GacetaIOS/Sources/Services.swift
       - path: GacetaIOS/Sources/Theme.swift
     settings:
       base:

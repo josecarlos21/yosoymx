@@ -1,0 +1,18 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="630" fill="#F2E8D9"/>
+  <circle cx="1028" cy="96" r="180" fill="#E7B887" opacity="0.3"/>
+  <circle cx="120" cy="548" r="210" fill="#C95E2A" opacity="0.16"/>
+  <rect x="54" y="54" width="1092" height="522" rx="42" fill="#FFF9F1" stroke="#DCC8B5" stroke-width="4"/>
+  <rect x="96" y="96" width="188" height="188" rx="44" fill="#2A1C12"/>
+  <rect x="114" y="114" width="152" height="152" rx="36" fill="#F7F1E8" opacity="0.96"/>
+  <path d="M144 152C144 144.268 150.268 138 158 138H207C223.016 138 236 150.984 236 167C236 175.59 232.239 183.288 226.27 188.531C232.239 193.774 236 201.473 236 210.062C236 226.078 223.016 239.062 207 239.062H158C150.268 239.062 144 232.794 144 225.062V152Z" fill="#8F2F1C"/>
+  <path d="M166 166H202C207.523 166 212 170.477 212 176C212 181.523 207.523 186 202 186H166V166Z" fill="#FFF8EF"/>
+  <path d="M166 200H205C211.075 200 216 204.925 216 211C216 217.075 211.075 222 205 222H166V200Z" fill="#FFF8EF"/>
+  <rect x="156" y="166" width="10" height="56" rx="5" fill="#E7B887"/>
+  <text x="310" y="132" fill="#8F2F1C" font-size="24" font-family="Helvetica, Arial, sans-serif" letter-spacing="7">GACETA EJE CENTRAL · PRIMERA EDICIÓN</text>
+  <text x="310" y="246" fill="#2A1C12" font-size="82" font-family="Georgia, 'Times New Roman', serif" font-weight="700">Ruta y evidencia vecinal</text>
+  <text x="310" y="322" fill="#8F2F1C" font-size="60" font-family="Georgia, 'Times New Roman', serif" font-weight="700">para ruido, vivienda y salud mental</text>
+  <text x="310" y="402" fill="#6A5647" font-size="30" font-family="Helvetica, Arial, sans-serif">Portada, biblioteca, comunidad moderada y seguimiento editorial.</text>
+  <rect x="846" y="434" width="244" height="86" rx="24" fill="#2A1C12"/>
+  <text x="886" y="488" fill="#FFF8EF" font-size="30" font-family="Helvetica, Arial, sans-serif" letter-spacing="4">11 MAR 2026</text>
+</svg>

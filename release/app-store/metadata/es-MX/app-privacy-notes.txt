@@ -1,0 +1,5 @@
+Declarar Name, Email y User Content. Marcar Not Used for Tracking.
+
+El correo es opcional y se usa solo para seguimiento editorial cuando la persona decide compartirlo.
+
+La comunidad es moderada antes de publicarse.

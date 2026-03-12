@@ -34,13 +34,24 @@ struct SettingsView: View {
             }
 
             Section("Acerca de") {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text(brand.masthead)
-                        .font(.headline)
-                    Text(content.metadata.description)
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                    Text("Versión \(content.metadata.version) · \(content.metadata.publishedDisplay)")
+                VStack(alignment: .leading, spacing: 12) {
+                    HStack(alignment: .center, spacing: 12) {
+                        Image("BrandMarkMono")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 34, height: 34)
+                            .accessibilityHidden(true)
+
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(brand.masthead)
+                                .font(.headline)
+                            Text(content.metadata.description)
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+
+                    Text("Edición \(content.metadata.version) · \(content.metadata.publishedDisplay)")
                         .font(.footnote)
                         .foregroundStyle(theme.warm)
                         .onLongPressGesture(minimumDuration: 1.1) {

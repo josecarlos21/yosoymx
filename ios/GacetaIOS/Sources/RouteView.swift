@@ -2,6 +2,8 @@ import SwiftUI
 
 struct RouteView: View {
     @Environment(\.openURL) private var openURL
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @EnvironmentObject private var model: AppModel
     @Binding var isShowingSettings: Bool
 
@@ -11,6 +13,7 @@ struct RouteView: View {
     private var content: IssueContent { model.content }
     private var brand: BrandConfig { model.brandConfig }
     private var theme: AppTheme { model.theme }
+    private var stackedActions: Bool { horizontalSizeClass == .compact || dynamicTypeSize.isAccessibilitySize }
 
     var body: some View {
         ScrollView {
@@ -57,12 +60,17 @@ struct RouteView: View {
                                     Text(authority.title)
                                         .font(.headline)
                                         .foregroundStyle(theme.ink)
+                                        .lineLimit(3)
+                                        .fixedSize(horizontal: false, vertical: true)
                                     Text(authority.text)
                                         .font(.subheadline)
                                         .foregroundStyle(theme.inkSoft)
+                                        .lineSpacing(2)
+                                        .fixedSize(horizontal: false, vertical: true)
                                     Text(authority.meta)
                                         .font(.footnote)
                                         .foregroundStyle(theme.warm)
+                                        .fixedSize(horizontal: false, vertical: true)
                                 }
                                 .frame(maxWidth: .infinity, alignment: .leading)
                             }
@@ -120,23 +128,18 @@ struct RouteView: View {
                                 .foregroundStyle(theme.inkSoft)
                         }
 
-                        HStack(spacing: 12) {
-                            Button {
-                                UIPasteboard.general.string = content.action.draft
-                            } label: {
-                                Label(content.action.copyLabel, systemImage: "doc.on.doc")
+                        Group {
+                            if stackedActions {
+                                VStack(spacing: 12) {
+                                    copyButton
+                                    shareButton
+                                }
+                            } else {
+                                HStack(spacing: 12) {
+                                    copyButton
+                                    shareButton
+                                }
                             }
-                            .buttonStyle(.borderedProminent)
-                            .tint(theme.warm)
-
-                            Button {
-                                shareItems = [content.action.draft]
-                                isShowingShareSheet = true
-                            } label: {
-                                Label("Compartir escrito", systemImage: "square.and.arrow.up")
-                            }
-                            .buttonStyle(.bordered)
-                            .tint(theme.warm)
                         }
 
                         Text(content.action.draft)
@@ -166,5 +169,28 @@ struct RouteView: View {
         .sheet(isPresented: $isShowingShareSheet) {
             ShareSheet(items: shareItems)
         }
+    }
+
+    private var copyButton: some View {
+        Button {
+            UIPasteboard.general.string = content.action.draft
+        } label: {
+            Label(content.action.copyLabel, systemImage: "doc.on.doc")
+                .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(.borderedProminent)
+        .tint(theme.warm)
+    }
+
+    private var shareButton: some View {
+        Button {
+            shareItems = [content.action.draft]
+            isShowingShareSheet = true
+        } label: {
+            Label("Compartir escrito", systemImage: "square.and.arrow.up")
+                .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(.bordered)
+        .tint(theme.warm)
     }
 }

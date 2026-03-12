@@ -99,6 +99,7 @@ function sanitizeEdition(entry: unknown): EditionPayload | null {
     label: candidate.label,
     location: candidate.location,
     themeLine: candidate.themeLine,
+    socialAssetId: typeof candidate.socialAssetId === "string" ? candidate.socialAssetId : null,
     contentPayload: candidate.contentPayload as EditionPayload["contentPayload"],
     brandOverrides:
       candidate.brandOverrides && typeof candidate.brandOverrides === "object"
@@ -249,6 +250,7 @@ export async function updateAdminIssue(token: string, issue: EditionPayload) {
         label: issue.label,
         location: issue.location,
         themeLine: issue.themeLine,
+        socialAssetId: issue.socialAssetId ?? null,
         contentPayload: issue.contentPayload,
         brandOverrides: issue.brandOverrides ?? null,
       }),

@@ -4,6 +4,9 @@ struct CommunityView: View {
     @EnvironmentObject private var model: AppModel
     @Binding var isShowingSettings: Bool
 
+    @AppStorage("community.comments.cache") private var cachedCommentsData = Data()
+    @AppStorage("community.histories.cache") private var cachedHistoriesData = Data()
+
     @State private var selectedKind: CommunityKind = .comment
     @State private var comments: [CommunityPost] = []
     @State private var histories: [CommunityPost] = []
@@ -28,9 +31,11 @@ struct CommunityView: View {
                         Text(selectedKind == .comment ? content.community.comments.title : content.community.history.title)
                             .font(.system(.largeTitle, design: .serif, weight: .black))
                             .foregroundStyle(theme.ink)
+                            .fixedSize(horizontal: false, vertical: true)
                         Text(selectedKind == .comment ? content.community.comments.summary : content.community.history.summary)
                             .font(.system(.body, design: .serif))
                             .foregroundStyle(theme.inkSoft)
+                            .lineSpacing(3)
                     }
                 }
 
@@ -41,13 +46,14 @@ struct CommunityView: View {
                 .pickerStyle(.segmented)
 
                 EditorialSurface(cornerRadius: theme.radiusLarge) {
-                    VStack(alignment: .leading, spacing: 10) {
-                        Text("Publicación con revisión")
-                            .font(.headline)
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Revisión editorial")
+                            .font(.subheadline.weight(.semibold))
                             .foregroundStyle(theme.ink)
                         Text(selectedKind == .comment ? content.community.comments.formIntro : content.community.history.formIntro)
                             .font(.footnote)
                             .foregroundStyle(theme.inkSoft)
+                            .lineSpacing(2)
 
                         HStack(spacing: 10) {
                             statusChip(title: "Visibles", value: "\(currentItems.count)")
@@ -57,15 +63,11 @@ struct CommunityView: View {
                 }
 
                 if !errorMessage.isEmpty {
-                    Text(errorMessage)
-                        .font(.footnote)
-                        .foregroundStyle(.red)
+                    messageBanner(text: errorMessage, systemImage: "wifi.exclamationmark", tint: theme.warm)
                 }
 
                 if !statusMessage.isEmpty {
-                    Text(statusMessage)
-                        .font(.footnote.weight(.semibold))
-                        .foregroundStyle(theme.warm)
+                    messageBanner(text: statusMessage, systemImage: "checkmark.circle.fill", tint: theme.ink)
                 }
 
                 if isLoading {
@@ -75,11 +77,11 @@ struct CommunityView: View {
 
                 ForEach(currentItems) { item in
                     EditorialSurface(cornerRadius: theme.radiusLarge) {
-                        VStack(alignment: .leading, spacing: 8) {
+                        VStack(alignment: .leading, spacing: 12) {
                             HStack(alignment: .top) {
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text(item.displayName)
-                                        .font(.headline)
+                                        .font(.headline.weight(.semibold))
                                         .foregroundStyle(theme.ink)
                                     if let category = item.category, !category.isEmpty {
                                         Text(category.uppercased())
@@ -90,13 +92,15 @@ struct CommunityView: View {
                                 }
                                 Spacer()
                                 Text(formatDate(item.createdAt))
-                                    .font(.footnote)
+                                    .font(.caption)
                                     .foregroundStyle(theme.inkSoft)
                             }
 
                             Text(item.content)
                                 .font(.system(.body, design: .serif))
                                 .foregroundStyle(theme.inkSoft)
+                                .lineSpacing(3)
+                                .fixedSize(horizontal: false, vertical: true)
                         }
                     }
                 }
@@ -127,6 +131,7 @@ struct CommunityView: View {
             }
         }
         .task {
+            restoreCachedPosts()
             await refresh()
         }
         .refreshable {
@@ -163,14 +168,29 @@ struct CommunityView: View {
     private func refresh() async {
         isLoading = true
         errorMessage = ""
-        do {
-            async let commentRequest = model.apiClient.fetchCommunity(kind: .comment)
-            async let historyRequest = model.apiClient.fetchCommunity(kind: .history)
-            comments = try await commentRequest
-            histories = try await historyRequest
-        } catch {
-            errorMessage = error.localizedDescription
+        var didFail = false
+
+        async let latestComments = fetchCommunitySafely(kind: .comment)
+        async let latestHistories = fetchCommunitySafely(kind: .history)
+
+        if let items = await latestComments {
+            comments = items
+            persistComments(items)
+        } else {
+            didFail = true
         }
+
+        if let items = await latestHistories {
+            histories = items
+            persistHistories(items)
+        } else {
+            didFail = true
+        }
+
+        if didFail {
+            errorMessage = currentItems.isEmpty ? "No pudimos actualizar la comunidad ahora." : "Mostramos la última actualización disponible."
+        }
+
         isLoading = false
     }
 
@@ -214,6 +234,57 @@ struct CommunityView: View {
         .padding(12)
         .background(theme.whiteGlassStrong, in: RoundedRectangle(cornerRadius: theme.radiusMedium, style: .continuous))
     }
+
+    private func messageBanner(text: String, systemImage: String, tint: Color) -> some View {
+        HStack(alignment: .top, spacing: 10) {
+            Image(systemName: systemImage)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(tint)
+                .padding(.top, 2)
+            Text(text)
+                .font(.footnote)
+                .foregroundStyle(theme.ink)
+                .lineSpacing(2)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(14)
+        .background(theme.whiteGlassStrong, in: RoundedRectangle(cornerRadius: theme.radiusLarge, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: theme.radiusLarge, style: .continuous)
+                .strokeBorder(tint.opacity(0.18), lineWidth: 1)
+        )
+    }
+
+    private func restoreCachedPosts() {
+        let decoder = JSONDecoder()
+
+        if comments.isEmpty,
+           let cached = try? decoder.decode([CommunityPost].self, from: cachedCommentsData) {
+            comments = cached
+        }
+
+        if histories.isEmpty,
+           let cached = try? decoder.decode([CommunityPost].self, from: cachedHistoriesData) {
+            histories = cached
+        }
+    }
+
+    private func fetchCommunitySafely(kind: CommunityKind) async -> [CommunityPost]? {
+        try? await model.apiClient.fetchCommunity(kind: kind)
+    }
+
+    private func persistComments(_ items: [CommunityPost]) {
+        let encoder = JSONEncoder()
+        guard let encoded = try? encoder.encode(items) else { return }
+        cachedCommentsData = encoded
+    }
+
+    private func persistHistories(_ items: [CommunityPost]) {
+        let encoder = JSONEncoder()
+        guard let encoded = try? encoder.encode(items) else { return }
+        cachedHistoriesData = encoded
+    }
 }
 
 struct CommunityComposerSheet: View {
@@ -244,13 +315,18 @@ struct CommunityComposerSheet: View {
         NavigationStack {
             Form {
                 Section {
+                    Label("Se publica después de revisión editorial.", systemImage: "checkmark.shield")
+                        .font(.footnote.weight(.semibold))
+                        .foregroundStyle(theme.warm)
                     Text(kind == .comment ? model.content.community.comments.formIntro : model.content.community.history.formIntro)
                         .font(.footnote)
                         .foregroundStyle(.secondary)
+                        .lineSpacing(2)
                 }
 
-                Section {
+                Section("Datos") {
                     TextField(kind == .comment ? model.content.community.comments.namePlaceholder : model.content.community.history.namePlaceholder, text: $displayName)
+                        .textInputAutocapitalization(.words)
                     TextField(kind == .comment ? model.content.community.comments.emailPlaceholder : model.content.community.history.emailPlaceholder, text: $email)
                         .keyboardType(.emailAddress)
                         .textInputAutocapitalization(.never)
@@ -260,15 +336,19 @@ struct CommunityComposerSheet: View {
                     }
                     TextField(kind == .comment ? model.content.community.comments.messagePlaceholder : model.content.community.history.messagePlaceholder, text: $contentText, axis: .vertical)
                         .lineLimit(6, reservesSpace: true)
-                } header: {
-                    Text(kind == .comment ? model.content.community.comments.formTitle : model.content.community.history.formTitle)
                 }
 
                 if !errorMessage.isEmpty {
                     Section {
-                        Text(errorMessage)
-                            .font(.footnote)
-                            .foregroundStyle(.red)
+                        HStack(alignment: .top, spacing: 10) {
+                            Image(systemName: "exclamationmark.circle.fill")
+                                .foregroundStyle(theme.warm)
+                                .padding(.top, 1)
+                            Text(errorMessage)
+                                .font(.footnote)
+                                .foregroundStyle(.primary)
+                                .lineSpacing(2)
+                        }
                     }
                 }
             }

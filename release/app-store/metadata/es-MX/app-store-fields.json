@@ -1,0 +1,13 @@
+{
+  "locale": "es-MX",
+  "appName": "Gaceta Eje Central",
+  "subtitle": "Ruta y evidencia vecinal",
+  "promotionalTextFile": "promotional-text.txt",
+  "descriptionFile": "description.txt",
+  "keywordsFile": "keywords.txt",
+  "supportURL": "https://yosoymx.com/gaceta-eje-central",
+  "marketingURL": "https://yosoymx.com",
+  "privacyURL": "https://yosoymx.com/privacy",
+  "copyright": "© 2026 Jose Carlos Torres Rivera",
+  "releaseMode": "manual"
+}

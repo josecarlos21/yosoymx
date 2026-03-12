@@ -1,0 +1,54 @@
+{
+  "comments": [
+    {
+      "id": "fixture-comment-01",
+      "kind": "comment",
+      "displayName": "Ana G.",
+      "email": "",
+      "category": "Testimonio",
+      "content": "La ruta institucional y la biblioteca ayudan a ordenar evidencia sin perder el hilo. Lo más útil fue ver qué documentos preparar antes de escalar la queja.",
+      "approved": true,
+      "source": "fixture",
+      "moderationStatus": "approved",
+      "createdAt": "2026-03-11T09:40:00-06:00"
+    },
+    {
+      "id": "fixture-comment-02",
+      "kind": "comment",
+      "displayName": "Colectivo Centro",
+      "email": "",
+      "category": "Apoyo vecinal",
+      "content": "La edición deja claro que no todo pasa por una sola autoridad. Tener la secuencia y los PDF en la misma app reduce mucha fricción para vecinos y familias.",
+      "approved": true,
+      "source": "fixture",
+      "moderationStatus": "approved",
+      "createdAt": "2026-03-11T08:15:00-06:00"
+    }
+  ],
+  "histories": [
+    {
+      "id": "fixture-history-01",
+      "kind": "history",
+      "displayName": "Red Barrial 2026",
+      "email": "",
+      "category": "Ruta legal",
+      "content": "Empezar por bitácora, audios y horarios consistentes hizo más clara la conversación con autoridades. El orden de evidencia ahorró semanas de idas y vueltas.",
+      "approved": true,
+      "source": "fixture",
+      "moderationStatus": "approved",
+      "createdAt": "2026-03-10T18:20:00-06:00"
+    },
+    {
+      "id": "fixture-history-02",
+      "kind": "history",
+      "displayName": "Vecina Eje Central",
+      "email": "",
+      "category": "Salud y seguimiento",
+      "content": "La combinación de registro clínico, desgaste del sueño y evidencia de vibración ayudó a explicar que no era una molestia menor sino un patrón sostenido con impacto real.",
+      "approved": true,
+      "source": "fixture",
+      "moderationStatus": "approved",
+      "createdAt": "2026-03-09T14:05:00-06:00"
+    }
+  ]
+}

@@ -75,6 +75,7 @@ export type EditionPayload = {
   label: string;
   location: string;
   themeLine: string;
+  socialAssetId?: string | null;
   contentPayload: IssueContent;
   brandOverrides?: Partial<BrandConfig> | null;
   createdAt: string;
@@ -98,6 +99,7 @@ export function buildFallbackEditionPayload(content: IssueContent = fallbackIssu
     label: content.metadata.editionLabel,
     location: content.metadata.location,
     themeLine: content.metadata.coverThemeLine,
+    socialAssetId: null,
     contentPayload: content,
     brandOverrides: null,
     createdAt: content.metadata.publishedDateISO,
@@ -124,4 +126,3 @@ export function mergeBrandConfig(base: BrandConfig, overrides?: Partial<BrandCon
     },
   };
 }
-

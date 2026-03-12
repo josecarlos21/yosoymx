@@ -58,11 +58,45 @@ export type EditionRecord = {
   label: string;
   location: string;
   themeLine: string;
+  socialAssetId: string | null;
   contentPayload: IssueContent;
   brandOverrides: Partial<BrandConfig> | null;
   createdAt: string;
   updatedAt: string;
 };
+
+export type PublicIssueSummary = {
+  id: string;
+  slug: string;
+  status: Extract<EditionStatus, "published" | "archived">;
+  version: number;
+  publishedAt: string | null;
+  label: string;
+  location: string;
+  themeLine: string;
+  title: string;
+  summary: string;
+  articleLabel: string;
+};
+
+export type IssuePreflightReport = {
+  blockers: string[];
+  warnings: string[];
+};
+
+export class IssueWorkflowError extends Error {
+  readonly code: string;
+  readonly status: number;
+  readonly report?: IssuePreflightReport;
+
+  constructor(message: string, code: string, status = 400, report?: IssuePreflightReport) {
+    super(message);
+    this.name = "IssueWorkflowError";
+    this.code = code;
+    this.status = status;
+    this.report = report;
+  }
+}
 
 export type MediaAssetRecord = {
   id: string;
@@ -178,6 +212,11 @@ export function normalizeEditionStatus(value: unknown): EditionStatus | "" {
   return value === "draft" || value === "review_ready" || value === "published" || value === "archived" ? value : "";
 }
 
+function normalizeOptionalAssetId(value: unknown) {
+  const normalized = sanitizeText(value, 120);
+  return normalized || null;
+}
+
 export function normalizeMediaKind(value: unknown): MediaAssetKind | "" {
   return value === "image" ||
     value === "og" ||
@@ -231,6 +270,41 @@ function nowIso() {
   return new Date().toISOString();
 }
 
+function isHttpUrl(value: string) {
+  try {
+    const parsed = new URL(value);
+    return parsed.protocol === "http:" || parsed.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
+function isPathOrHttpUrl(value: string) {
+  return value.startsWith("/") || isHttpUrl(value);
+}
+
+function collectStrings(value: unknown, bag: string[] = []) {
+  if (typeof value === "string") {
+    bag.push(value);
+    return bag;
+  }
+  if (Array.isArray(value)) {
+    value.forEach((entry) => collectStrings(entry, bag));
+    return bag;
+  }
+  if (value && typeof value === "object") {
+    Object.values(value as Record<string, unknown>).forEach((entry) => collectStrings(entry, bag));
+  }
+  return bag;
+}
+
+function containsPlaceholderContent(content: IssueContent) {
+  const haystack = collectStrings(content)
+    .join(" \n ")
+    .toLowerCase();
+  return ["placeholder", "demo", "muestra local", "pendiente"].some((marker) => haystack.includes(marker));
+}
+
 function nextId(prefix: string) {
   const randomPart =
     typeof crypto !== "undefined" && "randomUUID" in crypto
@@ -259,6 +333,7 @@ function fallbackEditionRecord(): EditionRecord {
     label: fallbackIssueContent.metadata.editionLabel,
     location: fallbackIssueContent.metadata.location,
     themeLine: fallbackIssueContent.metadata.coverThemeLine,
+    socialAssetId: null,
     contentPayload: fallbackIssueContent,
     brandOverrides: null,
     createdAt: publishedAt ?? nowIso(),
@@ -282,11 +357,44 @@ function mergeBrandConfig(base: BrandConfig, overrides: Partial<BrandConfig> | n
   };
 }
 
+function toPublicIssueSummary(item: EditionRecord): PublicIssueSummary {
+  return {
+    id: item.id,
+    slug: item.slug,
+    status: item.status === "published" ? "published" : "archived",
+    version: item.version,
+    publishedAt: item.publishedAt,
+    label: item.label,
+    location: item.location,
+    themeLine: item.themeLine,
+    title: sanitizeText(item.contentPayload.share?.title, 220) || sanitizeText(item.contentPayload.cover?.title, 220) || item.label,
+    summary:
+      sanitizeText(item.contentPayload.share?.summary, 420) ||
+      sanitizeText(item.contentPayload.cover?.summary, 420) ||
+      sanitizeText(item.contentPayload.metadata?.description, 420),
+    articleLabel: sanitizeText(item.contentPayload.metadata?.articleLabel, 160),
+  };
+}
+
 export function fallbackBrandRecord() {
   return fallbackBrandConfig;
 }
 
+async function ensureIssuesSchema(db: D1Database) {
+  const result = await db.prepare("PRAGMA table_info(issues)").bind().all();
+  const columns = new Set(
+    (result.results ?? [])
+      .map((row) => (typeof row.name === "string" ? row.name : ""))
+      .filter(Boolean)
+  );
+
+  if (!columns.has("social_asset_id")) {
+    await db.prepare("ALTER TABLE issues ADD COLUMN social_asset_id TEXT").bind().run();
+  }
+}
+
 export async function ensureCmsSeed(db: D1Database) {
+  await ensureIssuesSchema(db);
   const issuesCount = await db.prepare("SELECT COUNT(*) AS count FROM issues").bind().first();
   const brandCount = await db.prepare("SELECT COUNT(*) AS count FROM brand_config").bind().first();
 
@@ -307,11 +415,12 @@ export async function ensureCmsSeed(db: D1Database) {
           label,
           location,
           theme_line,
+          social_asset_id,
           content_json,
           brand_overrides_json,
           created_at,
           updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `
       )
       .bind(
@@ -323,6 +432,7 @@ export async function ensureCmsSeed(db: D1Database) {
         seed.label,
         seed.location,
         seed.themeLine,
+        seed.socialAssetId,
         JSON.stringify(seed.contentPayload),
         JSON.stringify(seed.brandOverrides),
         seed.createdAt,
@@ -373,6 +483,7 @@ function mapEditionRow(row: Record<string, unknown>): EditionRecord | null {
   const label = sanitizeText(row.label, MAX_LABEL_LENGTH);
   const location = sanitizeText(row.location, MAX_LOCATION_LENGTH);
   const themeLine = sanitizeText(row.theme_line, MAX_THEME_LINE_LENGTH);
+  const socialAssetId = normalizeOptionalAssetId(row.social_asset_id);
   const createdAt = typeof row.created_at === "string" ? row.created_at : "";
   const updatedAt = typeof row.updated_at === "string" ? row.updated_at : createdAt;
   const publishedAt = typeof row.published_at === "string" && row.published_at ? row.published_at : null;
@@ -392,6 +503,7 @@ function mapEditionRow(row: Record<string, unknown>): EditionRecord | null {
     label,
     location,
     themeLine,
+    socialAssetId,
     contentPayload,
     brandOverrides,
     createdAt,
@@ -480,7 +592,7 @@ export async function listIssues(db: D1Database, limit = 40) {
   const result = await db
     .prepare(
       `
-      SELECT id, slug, status, version, published_at, label, location, theme_line, content_json, brand_overrides_json, created_at, updated_at
+      SELECT id, slug, status, version, published_at, label, location, theme_line, social_asset_id, content_json, brand_overrides_json, created_at, updated_at
       FROM issues
       ORDER BY
         CASE status WHEN 'published' THEN 0 WHEN 'review_ready' THEN 1 WHEN 'draft' THEN 2 ELSE 3 END,
@@ -500,7 +612,7 @@ export async function getIssueById(db: D1Database, id: string) {
   const row = await db
     .prepare(
       `
-      SELECT id, slug, status, version, published_at, label, location, theme_line, content_json, brand_overrides_json, created_at, updated_at
+      SELECT id, slug, status, version, published_at, label, location, theme_line, social_asset_id, content_json, brand_overrides_json, created_at, updated_at
       FROM issues
       WHERE id = ?
       LIMIT 1
@@ -516,10 +628,16 @@ export async function getIssueBySlug(db: D1Database, slug: string) {
   const row = await db
     .prepare(
       `
-      SELECT id, slug, status, version, published_at, label, location, theme_line, content_json, brand_overrides_json, created_at, updated_at
+      SELECT id, slug, status, version, published_at, label, location, theme_line, social_asset_id, content_json, brand_overrides_json, created_at, updated_at
       FROM issues
-      WHERE slug = ? AND status = 'published'
-      ORDER BY updated_at DESC
+      WHERE slug = ? AND (
+        status = 'published' OR
+        (status = 'archived' AND published_at IS NOT NULL)
+      )
+      ORDER BY
+        CASE status WHEN 'published' THEN 0 ELSE 1 END,
+        published_at DESC,
+        updated_at DESC
       LIMIT 1
       `
     )
@@ -529,11 +647,34 @@ export async function getIssueBySlug(db: D1Database, slug: string) {
   return row ? mapEditionRow(row) : null;
 }
 
+export async function listPublicIssues(db: D1Database, limit = 12) {
+  const result = await db
+    .prepare(
+      `
+      SELECT id, slug, status, version, published_at, label, location, theme_line, social_asset_id, content_json, brand_overrides_json, created_at, updated_at
+      FROM issues
+      WHERE status = 'published' OR (status = 'archived' AND published_at IS NOT NULL)
+      ORDER BY
+        CASE status WHEN 'published' THEN 0 ELSE 1 END,
+        published_at DESC,
+        updated_at DESC
+      LIMIT ?
+      `
+    )
+    .bind(limit)
+    .all();
+
+  return (result.results ?? [])
+    .map((row) => mapEditionRow(row))
+    .filter((row): row is EditionRecord => row !== null)
+    .map((row) => toPublicIssueSummary(row));
+}
+
 export async function getCurrentPublishedIssue(db: D1Database) {
   const row = await db
     .prepare(
       `
-      SELECT id, slug, status, version, published_at, label, location, theme_line, content_json, brand_overrides_json, created_at, updated_at
+      SELECT id, slug, status, version, published_at, label, location, theme_line, social_asset_id, content_json, brand_overrides_json, created_at, updated_at
       FROM issues
       WHERE status = 'published'
       ORDER BY published_at DESC, updated_at DESC
@@ -567,8 +708,8 @@ export async function createDraftIssue(db: D1Database, sourceIssue: EditionRecor
     .prepare(
       `
       INSERT INTO issues (
-        id, slug, status, version, published_at, label, location, theme_line, content_json, brand_overrides_json, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        id, slug, status, version, published_at, label, location, theme_line, social_asset_id, content_json, brand_overrides_json, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `
     )
     .bind(
@@ -580,6 +721,7 @@ export async function createDraftIssue(db: D1Database, sourceIssue: EditionRecor
       created.label,
       created.location,
       created.themeLine,
+      created.socialAssetId,
       JSON.stringify(created.contentPayload),
       JSON.stringify(created.brandOverrides),
       created.createdAt,
@@ -590,22 +732,183 @@ export async function createDraftIssue(db: D1Database, sourceIssue: EditionRecor
   return created;
 }
 
+async function mediaAssetExists(db: D1Database, id: string) {
+  const row = await db
+    .prepare(
+      `
+      SELECT id
+      FROM media_assets
+      WHERE id = ? AND status <> 'replaced'
+      LIMIT 1
+      `
+    )
+    .bind(id)
+    .first();
+  return Boolean(row?.id);
+}
+
+function collectInternalAssetPaths(issue: EditionRecord) {
+  const paths = new Set<string>();
+  const pushIfInternal = (value: unknown) => {
+    if (typeof value === "string" && value.startsWith("/")) {
+      paths.add(value);
+    }
+  };
+
+  pushIfInternal(issue.contentPayload.metadata.heroImage?.src);
+  issue.contentPayload.resources?.pdfs?.forEach((resource) => pushIfInternal(resource.href));
+  issue.contentPayload.gallery?.items?.forEach((item) => pushIfInternal(item.fileName));
+  return Array.from(paths);
+}
+
+async function isReachableResource(url: URL) {
+  try {
+    let response = await fetch(url, { method: "HEAD", redirect: "follow" });
+    if (response.status === 405 || response.status === 501) {
+      response = await fetch(url, { method: "GET", redirect: "follow" });
+    }
+    return response.ok;
+  } catch {
+    return false;
+  }
+}
+
+export async function buildIssuePreflightReport(
+  db: D1Database,
+  request: Request,
+  env: CmsEnv,
+  issue: EditionRecord,
+  brand: BrandConfig
+): Promise<IssuePreflightReport> {
+  const blockers: string[] = [];
+  const warnings: string[] = [];
+  const { contentPayload } = issue;
+
+  if (!issue.slug.trim()) blockers.push("Define un slug único para la edición.");
+  if (!issue.label.trim()) blockers.push("La edición necesita un label visible.");
+  if (!issue.location.trim()) blockers.push("La edición necesita ubicación.");
+  if (!issue.themeLine.trim()) blockers.push("La edición necesita línea temática.");
+  if (!contentPayload.metadata.publishedDateISO || Number.isNaN(Date.parse(contentPayload.metadata.publishedDateISO))) {
+    blockers.push("La fecha de publicación no es válida.");
+  }
+  if (!contentPayload.share?.title?.trim()) blockers.push("Falta el título de share.");
+  if (!contentPayload.share?.summary?.trim()) blockers.push("Falta el resumen de share.");
+  if (!contentPayload.share?.quote?.trim()) blockers.push("Falta la cita principal para share.");
+
+  const hero = contentPayload.metadata.heroImage;
+  if (!hero?.src?.trim() || !isPathOrHttpUrl(hero.src)) blockers.push("La portada necesita una imagen principal válida.");
+  if (!hero?.alt?.trim()) blockers.push("La imagen principal necesita texto alt.");
+  if (!hero?.caption?.trim()) blockers.push("La imagen principal necesita caption.");
+
+  if (!contentPayload.sources?.items?.length) {
+    blockers.push("Incluye al menos una fuente visible.");
+  } else {
+    contentPayload.sources.items.forEach((item, index) => {
+      if (!item.href?.trim() || !isPathOrHttpUrl(item.href)) {
+        blockers.push(`La fuente ${index + 1} necesita un enlace válido.`);
+      }
+    });
+  }
+
+  if (!contentPayload.routes?.authorities?.length) {
+    blockers.push("Incluye al menos una autoridad o ruta institucional.");
+  } else {
+    contentPayload.routes.authorities.forEach((item, index) => {
+      if (!item.href?.trim() || !isPathOrHttpUrl(item.href)) {
+        blockers.push(`La autoridad ${index + 1} necesita un enlace válido.`);
+      }
+    });
+  }
+
+  if (!contentPayload.resources?.pdfs?.length) {
+    blockers.push("Incluye al menos un recurso PDF o documental.");
+  } else {
+    contentPayload.resources.pdfs.forEach((item, index) => {
+      if (!item.href?.trim() || !isPathOrHttpUrl(item.href)) {
+        blockers.push(`El recurso ${index + 1} necesita una ruta válida.`);
+      }
+    });
+  }
+
+  if (!contentPayload.gallery?.items?.length) {
+    warnings.push("La galería no tiene piezas visuales asociadas.");
+  } else {
+    contentPayload.gallery.items.forEach((item, index) => {
+      if (!item.title?.trim() || !item.description?.trim() || !item.fileName?.trim()) {
+        blockers.push(`La pieza visual ${index + 1} está incompleta.`);
+      } else if (!isPathOrHttpUrl(item.fileName)) {
+        blockers.push(`La pieza visual ${index + 1} necesita una ruta válida.`);
+      }
+    });
+  }
+
+  if (containsPlaceholderContent(contentPayload)) {
+    blockers.push("El contenido todavía contiene marcas de placeholder, demo o pendiente.");
+  }
+
+  const effectiveSocialAssetId = issue.socialAssetId || brand.defaultOgAssetId || "";
+  if (!effectiveSocialAssetId) {
+    blockers.push("Falta un asset social de miniatura para compartir la edición.");
+  } else if (!(await mediaAssetExists(db, effectiveSocialAssetId))) {
+    blockers.push("El asset social configurado no existe o ya no está activo.");
+  }
+
+  const internalPaths = collectInternalAssetPaths(issue);
+  const origin = originSiteFromRequest(request, env);
+  for (const path of internalPaths) {
+    const reachable = await isReachableResource(new URL(path, origin));
+    if (!reachable) {
+      blockers.push(`No se pudo verificar el recurso interno ${path}.`);
+    }
+  }
+
+  const externalLinks = [
+    ...contentPayload.sources.items.map((item) => item.href),
+    ...contentPayload.routes.authorities.map((item) => item.href),
+  ].filter((href): href is string => typeof href === "string" && href.startsWith("http"));
+  if (externalLinks.length) {
+    warnings.push("Los enlaces externos quedan marcados como verificación manual al momento de publicar.");
+  }
+
+  return {
+    blockers: Array.from(new Set(blockers)),
+    warnings: Array.from(new Set(warnings)),
+  };
+}
+
 export async function updateIssueRecord(db: D1Database, id: string, payload: Partial<EditionRecord>) {
   const existing = await getIssueById(db, id);
   if (!existing) return null;
+  if (existing.status === "published" || existing.status === "archived") {
+    throw new IssueWorkflowError(
+      "Las ediciones publicadas o archivadas son de solo lectura. Crea un borrador para corregirlas.",
+      "immutable-edition",
+      409
+    );
+  }
 
   const nextContent =
     payload.contentPayload && typeof payload.contentPayload === "object"
       ? (payload.contentPayload as IssueContent)
       : existing.contentPayload;
 
+  const nextStatusRaw = normalizeEditionStatus(payload.status);
+  if (nextStatusRaw === "published" || nextStatusRaw === "archived") {
+    throw new IssueWorkflowError(
+      "Usa las acciones específicas de publicar o archivar; no cambies ese estado desde guardar.",
+      "status-transition-not-allowed",
+      409
+    );
+  }
+
   const next: EditionRecord = {
     ...existing,
     slug: normalizeSlug(payload.slug ?? existing.slug, existing.slug),
-    status: normalizeEditionStatus(payload.status) || existing.status,
+    status: nextStatusRaw || existing.status,
     label: sanitizeText(payload.label ?? existing.label, MAX_LABEL_LENGTH) || existing.label,
     location: sanitizeText(payload.location ?? existing.location, MAX_LOCATION_LENGTH) || existing.location,
     themeLine: sanitizeText(payload.themeLine ?? existing.themeLine, MAX_THEME_LINE_LENGTH) || existing.themeLine,
+    socialAssetId: normalizeOptionalAssetId(payload.socialAssetId) ?? existing.socialAssetId,
     contentPayload: nextContent,
     brandOverrides:
       payload.brandOverrides && typeof payload.brandOverrides === "object"
@@ -614,11 +917,27 @@ export async function updateIssueRecord(db: D1Database, id: string, payload: Par
     updatedAt: nowIso(),
   };
 
+  const slugConflict = await db
+    .prepare(
+      `
+      SELECT id
+      FROM issues
+      WHERE slug = ? AND id <> ?
+      LIMIT 1
+      `
+    )
+    .bind(next.slug, id)
+    .first();
+
+  if (slugConflict?.id) {
+    throw new Error("slug-conflict");
+  }
+
   await db
     .prepare(
       `
       UPDATE issues
-      SET slug = ?, status = ?, label = ?, location = ?, theme_line = ?, content_json = ?, brand_overrides_json = ?, updated_at = ?
+      SET slug = ?, status = ?, label = ?, location = ?, theme_line = ?, social_asset_id = ?, content_json = ?, brand_overrides_json = ?, updated_at = ?
       WHERE id = ?
       `
     )
@@ -628,6 +947,7 @@ export async function updateIssueRecord(db: D1Database, id: string, payload: Par
       next.label,
       next.location,
       next.themeLine,
+      next.socialAssetId,
       JSON.stringify(next.contentPayload),
       JSON.stringify(next.brandOverrides),
       next.updatedAt,
@@ -641,6 +961,13 @@ export async function updateIssueRecord(db: D1Database, id: string, payload: Par
 export async function publishIssueRecord(db: D1Database, id: string) {
   const existing = await getIssueById(db, id);
   if (!existing) return null;
+  if (existing.status !== "review_ready") {
+    throw new IssueWorkflowError(
+      "La edición debe quedar marcada como lista para revisión antes de publicarse.",
+      "review-ready-required",
+      409
+    );
+  }
 
   const publishedAt = nowIso();
 

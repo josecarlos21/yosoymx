@@ -1,6 +1,9 @@
 import {
+  buildIssuePreflightReport,
   ensureCmsSeed,
   getIssueById,
+  getBrandConfig,
+  IssueWorkflowError,
   jsonResponse,
   logActivity,
   normalizeEditionStatus,
@@ -16,6 +19,7 @@ type UpdateIssueBody = {
   label?: unknown;
   location?: unknown;
   themeLine?: unknown;
+  socialAssetId?: unknown;
   contentPayload?: unknown;
   brandOverrides?: unknown;
 };
@@ -60,12 +64,43 @@ export async function onRequest(context: {
         return jsonResponse({ error: "invalid-json", code: "validation" }, 400);
       }
 
+      const requestedStatus = normalizeEditionStatus(body.status);
+      if (requestedStatus === "review_ready") {
+        const existing = await getIssueById(db as never, id);
+        if (!existing) {
+          return jsonResponse({ error: "issue-not-found", code: "not-found" }, 404);
+        }
+        const reviewCandidate = {
+          ...existing,
+          slug: typeof body.slug === "string" ? body.slug : existing.slug,
+          status: "review_ready" as const,
+          label: typeof body.label === "string" ? body.label : existing.label,
+          location: typeof body.location === "string" ? body.location : existing.location,
+          themeLine: typeof body.themeLine === "string" ? body.themeLine : existing.themeLine,
+          socialAssetId: typeof body.socialAssetId === "string" ? body.socialAssetId : existing.socialAssetId,
+          contentPayload:
+            body.contentPayload && typeof body.contentPayload === "object"
+              ? (body.contentPayload as typeof existing.contentPayload)
+              : existing.contentPayload,
+          brandOverrides:
+            body.brandOverrides && typeof body.brandOverrides === "object"
+              ? (body.brandOverrides as typeof existing.brandOverrides)
+              : existing.brandOverrides,
+        };
+        const brand = await getBrandConfig(db as never);
+        const report = await buildIssuePreflightReport(db as never, request, env, reviewCandidate, brand);
+        if (report.blockers.length > 0) {
+          throw new IssueWorkflowError("La edición no cumple el preflight editorial.", "preflight-failed", 422, report);
+        }
+      }
+
       const item = await updateIssueRecord(db as never, id, {
         slug: body.slug as string | undefined,
-        status: normalizeEditionStatus(body.status) || undefined,
+        status: requestedStatus || undefined,
         label: body.label as string | undefined,
         location: body.location as string | undefined,
         themeLine: body.themeLine as string | undefined,
+        socialAssetId: body.socialAssetId as string | undefined,
         contentPayload: body.contentPayload as never,
         brandOverrides: (body.brandOverrides && typeof body.brandOverrides === "object" ? body.brandOverrides : undefined) as never,
       });
@@ -84,6 +119,20 @@ export async function onRequest(context: {
 
     return jsonResponse({ error: "method-not-allowed", code: "method-not-allowed" }, 405);
   } catch (error) {
+    if (error instanceof IssueWorkflowError) {
+      return jsonResponse(
+        {
+          error: error.message,
+          code: error.code,
+          blockers: error.report?.blockers ?? [],
+          warnings: error.report?.warnings ?? [],
+        },
+        error.status
+      );
+    }
+    if (error instanceof Error && error.message === "slug-conflict") {
+      return jsonResponse({ error: "Ese slug ya existe. Usa uno distinto para conservar el historial.", code: "slug-conflict" }, 409);
+    }
     console.error(error);
     return jsonResponse({ error: "internal-error", code: "internal" }, 500);
   }

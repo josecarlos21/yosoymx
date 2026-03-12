@@ -59,6 +59,18 @@
 4. En "Custom domains", apunta `yosoymx.com` como raíz.
 5. Si deseas soporte `www`, agrega `www.yosoymx.com` y configura redirect 301 a `https://yosoymx.com`.
 
+## 3.1) Regla crítica para clientes nativos
+- El iPhone no puede resolver el challenge HTML de Cloudflare. Las rutas `yosoymx.com/api/*` deben responder siempre JSON plano.
+- En WAF / Security Rules, crea una regla para `hostname eq "yosoymx.com"` y `path starts_with "/api/"`.
+- Acción requerida:
+  - omitir `Managed Challenge`
+  - omitir `Bot Challenge` o interstitial HTML equivalente
+  - permitir `GET`, `POST` y `OPTIONS` sin challenge
+- Verificación mínima:
+  - `curl -I https://yosoymx.com/api/issues/current` debe devolver `200` y `content-type: application/json`
+  - `curl -I "https://yosoymx.com/api/community?kind=comment&limit=3"` debe devolver `200` y `content-type: application/json`
+- Si estas rutas devuelven `403 text/html`, la app iOS cae en fallback y la comunidad no podrá refrescar ni enviar aportes.
+
 ## 4) Provisionar D1
 1. Crear base:
    - `yosoymx-community`
@@ -71,13 +83,23 @@
    - `yosoymx.com`
 2. (Opcional) agrega `www.yosoymx.com` y configura redirección a `yosoymx.com`.
 3. Recomendado: forzar www -> no-www desde DNS/Redirect rules de Cloudflare.
+4. Universal links:
+   - publicar `/.well-known/apple-app-site-association` sin redirect
+   - servirlo con `content-type: application/json`
+   - excluir esa ruta de transformaciones HTML o challenge del WAF
+5. Privacidad pública:
+   - verificar `https://yosoymx.com/privacy`
+   - usar esa URL como política de privacidad en App Store Connect
 
 ## 6) Verificación mínima post-deploy
 - `https://yosoymx.com/` carga correctamente.
+- `https://yosoymx.com/gaceta-eje-central`, `/ruta`, `/biblioteca`, `/comunidad` y `/contacto` cargan sin 404.
+- `https://yosoymx.com/privacy` carga correctamente.
+- `https://yosoymx.com/.well-known/apple-app-site-association` responde JSON plano.
 - Secciones ancla operan: `#comentarios`, `#historial`, `#contacto`.
 - Descarga de PDF responde para cada recurso en `public/pdfs`.
 - `GET /api/community?kind=comment&limit=20` y `kind=history`.
-- `POST /api/community` guarda con `approved=1`.
+- `POST /api/community` guarda con `moderation_status='pending'`.
 - `GET /api/admin/editions` responde con `Authorization: Bearer ADMIN_TOKEN`.
 - `POST /api/admin/editions` persiste `admin_editions` en D1.
 - Workflow valida contrato (`community.sql`, admin endpoint, `D1_DATABASE_ID`) antes de publicar.

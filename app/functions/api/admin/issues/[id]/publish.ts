@@ -1,5 +1,9 @@
 import {
+  buildIssuePreflightReport,
   ensureCmsSeed,
+  getBrandConfig,
+  getIssueById,
+  IssueWorkflowError,
   jsonResponse,
   logActivity,
   optionsResponse,
@@ -34,6 +38,15 @@ export async function onRequest(context: {
 
   try {
     await ensureCmsSeed(db as never);
+    const existing = await getIssueById(db as never, id);
+    if (!existing) {
+      return jsonResponse({ error: "issue-not-found", code: "not-found" }, 404);
+    }
+    const brand = await getBrandConfig(db as never);
+    const report = await buildIssuePreflightReport(db as never, request, env, existing, brand);
+    if (report.blockers.length > 0) {
+      throw new IssueWorkflowError("La edición no cumple el preflight editorial.", "preflight-failed", 422, report);
+    }
     const item = await publishIssueRecord(db as never, id);
     if (!item) {
       return jsonResponse({ error: "issue-not-found", code: "not-found" }, 404);
@@ -44,6 +57,17 @@ export async function onRequest(context: {
     });
     return jsonResponse({ item });
   } catch (error) {
+    if (error instanceof IssueWorkflowError) {
+      return jsonResponse(
+        {
+          error: error.message,
+          code: error.code,
+          blockers: error.report?.blockers ?? [],
+          warnings: error.report?.warnings ?? [],
+        },
+        error.status
+      );
+    }
     console.error(error);
     return jsonResponse({ error: "internal-error", code: "internal" }, 500);
   }

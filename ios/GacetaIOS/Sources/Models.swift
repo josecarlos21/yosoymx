@@ -53,6 +53,7 @@ struct EditionPayload: Decodable {
     let label: String
     let location: String
     let themeLine: String
+    let socialAssetId: String?
     let contentPayload: IssueContent
     let createdAt: String
     let updatedAt: String
@@ -541,7 +542,7 @@ enum CommunityModerationStatus: String, Codable {
     case hidden
 }
 
-struct CommunityPost: Decodable, Identifiable {
+struct CommunityPost: Codable, Identifiable {
     let id: String
     let kind: CommunityKind
     let displayName: String

@@ -66,6 +66,12 @@ const FORCE_LOCAL_API =
     ? String(import.meta.env.VITE_FORCE_LOCAL_API).toLowerCase() === "true"
     : false;
 
+function isLocalCommunityFallbackEnabled() {
+  if (FORCE_LOCAL_API) return true;
+  if (typeof window === "undefined") return false;
+  return ["localhost", "127.0.0.1", "::1"].includes(window.location.hostname);
+}
+
 export function sanitizeCommunityText(value: string) {
   return normalizeString(value, 5000);
 }
@@ -107,9 +113,8 @@ function responseHasJsonContentType(response: Response) {
 }
 
 function shouldPreferLocalFallback(url: string) {
-  if (FORCE_LOCAL_API || typeof window === "undefined") return false;
-  const isLocalHost = ["localhost", "127.0.0.1", "::1"].includes(window.location.hostname);
-  return isLocalHost && url.startsWith("/api/");
+  if (typeof window === "undefined") return false;
+  return isLocalCommunityFallbackEnabled() && url.startsWith("/api/");
 }
 
 async function parseJsonSafe<T>(response: Response): Promise<T | null> {
@@ -178,6 +183,7 @@ const DEFAULT_POSTS: CommunityPost[] = [
 ];
 
 function readFromStorage(): CommunityPost[] {
+  if (!isLocalCommunityFallbackEnabled()) return [];
   if (!isBrowserStorageAvailable()) return DEFAULT_POSTS;
   try {
     const raw = window.localStorage.getItem(COMMUNITY_STORAGE_KEY);
@@ -192,7 +198,7 @@ function readFromStorage(): CommunityPost[] {
 }
 
 function writeToStorage(posts: CommunityPost[]) {
-  if (!isBrowserStorageAvailable()) return;
+  if (!isLocalCommunityFallbackEnabled() || !isBrowserStorageAvailable()) return;
   try {
     window.localStorage.setItem(COMMUNITY_STORAGE_KEY, JSON.stringify(posts));
   } catch {
@@ -265,10 +271,10 @@ function requestWithTimeout(url: string, init: RequestInit = {}) {
 
 async function parseApiError(response: Response) {
   if (!responseHasJsonContentType(response)) {
-    return new CommunityApiError("Respuesta no válida del servicio.", COMMUNITY_ERROR_CODES.unavailable, response.status);
+    return new CommunityApiError("Tu aporte no pudo enviarse ahora. Intenta más tarde.", COMMUNITY_ERROR_CODES.unavailable, response.status);
   }
   const raw = await parseJsonSafe<{ error?: string; message?: string }>(response);
-  const message = parseApiErrorMessage(raw) || `Error del servicio (${response.status})`;
+  const message = parseApiErrorMessage(raw) || "Tu aporte no pudo enviarse ahora. Intenta más tarde.";
   return new CommunityApiError(message, pickErrorCode(response.status, message), response.status);
 }
 
@@ -393,7 +399,7 @@ async function postToApi(form: CommunityFormInput): Promise<CommunityPost | null
   }
 
   if (!responseHasJsonContentType(response)) {
-    throw new CommunityApiError("Respuesta no válida del servicio.", COMMUNITY_ERROR_CODES.unavailable, response.status);
+    throw new CommunityApiError("Tu aporte no pudo enviarse ahora. Intenta más tarde.", COMMUNITY_ERROR_CODES.unavailable, response.status);
   }
 
   const raw = (await parseJsonSafe<{ item?: unknown }>(response)) ?? {};
@@ -411,7 +417,7 @@ export async function fetchCommunityPosts(kind: CommunityKind, limit = 20): Prom
   }
 
   const localPosts = sortPosts(readFromStorage().filter((post) => post.kind === kind));
-  return localPosts.filter((post) => post.approved);
+  return localPosts.filter((post) => post.approved).slice(0, limit);
 }
 
 export async function submitCommunityPost(input: CommunityFormInput): Promise<CommunityPost> {
@@ -419,8 +425,11 @@ export async function submitCommunityPost(input: CommunityFormInput): Promise<Co
   try {
     const posted = await postToApi(input);
     if (posted) return { ...posted, source: "api" };
+    if (!isLocalCommunityFallbackEnabled()) {
+      throw new CommunityApiError("Tu aporte no pudo enviarse ahora. Intenta más tarde.", COMMUNITY_ERROR_CODES.unavailable);
+    }
   } catch (error) {
-    if (!shouldFallbackLocally(error)) {
+    if (!shouldFallbackLocally(error) || !isLocalCommunityFallbackEnabled()) {
       throw error;
     }
   }
