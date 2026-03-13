@@ -1,6 +1,6 @@
 /* eslint-disable no-unused-vars */
-import fallbackBrandConfigJson from "../../../shared/content/brand-config.json" with { type: "json" };
-import fallbackIssueContentJson from "../../../shared/content/issue-content.json" with { type: "json" };
+import fallbackBrandConfigJson from "../../../shared/content/brand-config.json";
+import fallbackIssueContentJson from "../../../shared/content/issue-content.json";
 
 type D1RunResult = { success?: boolean };
 
