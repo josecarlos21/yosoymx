@@ -5,16 +5,3 @@ pages_build_output_dir = "dist"
 [vars]
 ORIGIN_SITE = "https://yosoymx.com"
 APP_ENV = "production"
-
-[[d1_databases]]
-binding = "DB"
-database_name = "yosoymx-community"
-# Placeholder válido para comandos locales de Wrangler. El binding real de Pages debe
-# configurarse en Cloudflare Dashboard o sobrescribirse con el valor de producción.
-database_id = "00000000-0000-0000-0000-000000000000"
-
-[[r2_buckets]]
-binding = "MEDIA_BUCKET"
-# Placeholders válidos. Los buckets reales se administran desde Cloudflare Pages.
-bucket_name = "yosoymx-media-placeholder"
-preview_bucket_name = "yosoymx-media-preview-placeholder"
