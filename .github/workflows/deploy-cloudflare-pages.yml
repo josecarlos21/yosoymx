@@ -88,8 +88,8 @@ jobs:
         with:
           apiToken: ${{ secrets.CF_API_TOKEN }}
           accountId: ${{ secrets.CF_ACCOUNT_ID }}
+          workingDirectory: app
           command: >
             pages deploy dist
-            --cwd app
             --project-name=${{ vars.CLOUDFLARE_PROJECT_NAME || 'yosoymx' }}
             --branch=master
