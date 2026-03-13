@@ -90,5 +90,6 @@ jobs:
           accountId: ${{ secrets.CF_ACCOUNT_ID }}
           command: >
             pages deploy dist
+            --cwd app
             --project-name=${{ vars.CLOUDFLARE_PROJECT_NAME || 'yosoymx' }}
             --branch=master
