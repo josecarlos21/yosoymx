@@ -7,6 +7,7 @@ on:
   pull_request:
     branches:
       - master
+  workflow_dispatch:
 
 jobs:
   build:
@@ -14,6 +15,8 @@ jobs:
     runs-on: ubuntu-latest
     env:
       D1_DATABASE_ID: ${{ vars.D1_DATABASE_ID }}
+      R2_BUCKET_NAME: ${{ vars.R2_BUCKET_NAME }}
+      R2_PREVIEW_BUCKET_NAME: ${{ vars.R2_PREVIEW_BUCKET_NAME }}
     defaults:
       run:
         working-directory: app
@@ -36,6 +39,12 @@ jobs:
           if [ -z "$D1_DATABASE_ID" ]; then
             echo "::warning title=Falta D1_DATABASE_ID::La variable D1_DATABASE_ID no está definida. Se saltará la sincronización de base de datos."
           fi
+          if [ -z "$R2_BUCKET_NAME" ]; then
+            echo "::warning title=Falta R2_BUCKET_NAME::La variable R2_BUCKET_NAME no está definida. El media pipeline quedará sin bucket remoto."
+          fi
+          if [ -z "$R2_PREVIEW_BUCKET_NAME" ]; then
+            echo "::warning title=Falta R2_PREVIEW_BUCKET_NAME::La variable R2_PREVIEW_BUCKET_NAME no está definida. El bucket preview quedará pendiente."
+          fi
           if [ ! -f package-lock.json ]; then
             echo "No existe package-lock.json; el pipeline usa npm ci y requiere lockfile npm."
             exit 1
@@ -43,10 +52,6 @@ jobs:
           if [ -f pnpm-lock.yaml ]; then
             echo "Se detectó pnpm-lock.yaml junto con package-lock.json; mantiene ambigüedad de gestor."
             echo "Define solo package-lock.json para este proyecto."
-            exit 1
-          fi
-          if grep -q "REEMPLAZAR_DATABASE_ID" wrangler.toml; then
-            echo "wrangler.toml contiene placeholder REEMPLAZAR_DATABASE_ID."
             exit 1
           fi
           if [ ! -f functions/api/admin/editions.ts ]; then
@@ -59,9 +64,11 @@ jobs:
       - name: Build app
         run: npm run build
 
-      - name: Run lint (master branch validation)
-        if: github.event_name == 'push'
-        run: npm run lint || true
+      - name: Run unit tests
+        run: npm run test -- --runInBand
+
+      - name: Run lint
+        run: npm run lint
 
       - name: Sync D1 schema (master branch)
         if: github.event_name == 'push' && github.ref == 'refs/heads/master' && vars.CLOUDFLARE_D1_DATABASE_NAME != ''
@@ -82,6 +89,6 @@ jobs:
           apiToken: ${{ secrets.CF_API_TOKEN }}
           accountId: ${{ secrets.CF_ACCOUNT_ID }}
           command: >
-            pages deploy app/dist
+            pages deploy dist
             --project-name=${{ vars.CLOUDFLARE_PROJECT_NAME || 'yosoymx' }}
             --branch=master

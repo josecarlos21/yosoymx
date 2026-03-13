@@ -9,6 +9,16 @@
       "screen": "Inicio"
     },
     {
+      "custom": "gacetaeje://edicion/primera-edicion",
+      "universal": "https://yosoymx.com/gaceta-eje-central/edicion/primera-edicion",
+      "screen": "Inicio > edición archivada"
+    },
+    {
+      "custom": "gacetaeje://archivo",
+      "universal": "https://yosoymx.com/gaceta-eje-central/archivo",
+      "screen": "Archivo editorial"
+    },
+    {
       "custom": "gacetaeje://ruta",
       "universal": "https://yosoymx.com/gaceta-eje-central/ruta",
       "screen": "Ruta"

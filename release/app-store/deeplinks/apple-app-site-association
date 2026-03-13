@@ -7,6 +7,8 @@
         "paths": [
           "/gaceta-eje-central",
           "/gaceta-eje-central/",
+          "/gaceta-eje-central/archivo",
+          "/gaceta-eje-central/edicion/*",
           "/gaceta-eje-central/inicio",
           "/gaceta-eje-central/ruta",
           "/gaceta-eje-central/biblioteca",

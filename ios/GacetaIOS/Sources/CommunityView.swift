@@ -203,7 +203,9 @@ struct CommunityView: View {
             await refresh()
             return true
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = input.kind == .comment
+                ? "Tu comentario no pudo enviarse ahora. Intenta más tarde."
+                : "Tu aporte no pudo enviarse ahora. Intenta más tarde."
             return false
         }
     }
@@ -359,7 +361,7 @@ struct CommunityComposerSheet: View {
                     Button("Cancelar") { dismiss() }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button(isSubmitting ? "Enviando…" : "Enviar") {
+                    Button(isSubmitting ? "Enviando…" : "Enviar a revisión") {
                         Task { await submit() }
                     }
                     .disabled(isSubmitting)

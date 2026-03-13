@@ -274,7 +274,12 @@ async function parseApiError(response: Response) {
     return new CommunityApiError("Tu aporte no pudo enviarse ahora. Intenta más tarde.", COMMUNITY_ERROR_CODES.unavailable, response.status);
   }
   const raw = await parseJsonSafe<{ error?: string; message?: string }>(response);
-  const message = parseApiErrorMessage(raw) || "Tu aporte no pudo enviarse ahora. Intenta más tarde.";
+  const rawMessage = parseApiErrorMessage(raw);
+  const looksLikeCode = /^[a-z0-9-_.]+$/i.test(rawMessage);
+  const message =
+    response.status >= 500 || !rawMessage || looksLikeCode
+      ? "Tu aporte no pudo enviarse ahora. Intenta más tarde."
+      : rawMessage;
   return new CommunityApiError(message, pickErrorCode(response.status, message), response.status);
 }
 

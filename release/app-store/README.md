@@ -27,6 +27,16 @@
 - Marketing URL: ver `metadata/es-MX/marketing-url.txt`
 - App Review Notes: ver `metadata/es-MX/review-notes.txt`
 
+## Scripts de release
+- Verificación de producción: `cd app && npm run verify:production`
+- Capturas de screenshots iOS: `bash release/app-store/scripts/capture-ios-screenshots.sh`
+- Preparar archive TestFlight: `bash ios/scripts/prepare-testflight-release.sh`
+
+## Build actual de referencia
+- Versión iOS esperada: `1.0.0`
+- Build actual listo para subida: `3`
+- Archive actual de referencia: `/tmp/GacetaIOS-release-v1.0.0-3.xcarchive`
+
 ## Recordatorios operativos
 - No subir a testers externos hasta que `https://yosoymx.com/api/*` responda JSON sin challenge HTML.
 - Validar que `/.well-known/apple-app-site-association` se sirva sin redirect y con `application/json`.

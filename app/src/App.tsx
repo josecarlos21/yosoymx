@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
+  Archive,
   AlertOctagon,
   AlertTriangle,
   AudioWaveform,
@@ -520,6 +521,7 @@ export default function MicrositioAcosoVecinal2026() {
   const isMountedRef = useRef(true);
 
   const issueContent = currentEdition?.item.contentPayload ?? fallbackIssueContent;
+  const isArchiveLanding = routeState.isArchiveLanding;
   const canonicalUrl = issueContent.metadata.canonicalUrl;
   const issueNavigation = useMemo(() => issueContent.navigation, [issueContent.navigation]);
   const issuePdfResources = useMemo(() => issueContent.resources.pdfs, [issueContent.resources.pdfs]);
@@ -862,7 +864,7 @@ export default function MicrositioAcosoVecinal2026() {
     const cooldownLeft = kind === "comment" ? commentCooldownLeft : historyCooldownLeft;
 
     if (cooldownLeft > 0) {
-      setSubmitState({ kind: "error", message: `Espera ${cooldownLeft} segundos antes de publicar otro.` });
+      setSubmitState({ kind: "error", message: `Espera ${cooldownLeft} segundos antes de enviar otro aporte.` });
       return;
     }
 
@@ -873,7 +875,7 @@ export default function MicrositioAcosoVecinal2026() {
       return;
     }
     setErrors(emptyValidationErrors());
-    setSubmitState({ kind: "loading", message: "Enviando..." });
+    setSubmitState({ kind: "loading", message: "Enviando a revisión..." });
 
     try {
       await submitCommunityPost({
@@ -918,7 +920,7 @@ export default function MicrositioAcosoVecinal2026() {
         historyStatusTimeoutRef.current = resetTimeout;
       }
     } catch (error) {
-      const message = error instanceof Error ? error.message : "No fue posible enviar. Intenta de nuevo.";
+      const message = error instanceof Error ? error.message : "Tu aporte no pudo enviarse ahora. Intenta más tarde.";
       setSubmitState({ kind: "error", message });
     }
   };
@@ -1024,6 +1026,66 @@ export default function MicrositioAcosoVecinal2026() {
     }
   };
 
+  const archiveSection = (
+    <section id="archivo" className="border-t" style={{ borderColor: TOKENS.color.line, ...paperStyle(false), ...TOKENS.sectionPad }}>
+      <div className="mx-auto max-w-[1440px] px-4 md:px-6">
+        <div className="mb-8">
+          <Eyebrow>Archivo editorial</Eyebrow>
+          <h2 className="mt-4 text-[clamp(2rem,4vw,3.5rem)] font-black tracking-tight" style={{ fontFamily: TOKENS.font.display, color: TOKENS.color.ink }}>
+            Ediciones publicadas y notas anteriores
+          </h2>
+          <p className="mt-4 max-w-3xl text-lg leading-8" style={{ color: TOKENS.color.inkSoft, fontFamily: TOKENS.font.editorial }}>
+            Cuando se publique una nueva edición, la vigente pasa al archivo con su propio enlace. Así la edición 2 puede salir sin perder la 1.
+          </p>
+        </div>
+
+        <div className="grid gap-4 lg:grid-cols-2">
+          {issueArchive.map((entry) => {
+            const isCurrent = entry.status === "published";
+            return (
+              <a
+                key={entry.id}
+                href={buildEditionHistoryHref(entry.slug, isCurrent)}
+                className="rounded-[24px] border p-5 transition hover:-translate-y-0.5 hover:bg-white"
+                style={{ borderColor: TOKENS.color.line, background: "rgba(255,255,255,0.84)", boxShadow: TOKENS.shadow.soft }}
+              >
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="text-[11px] uppercase tracking-[0.24em]" style={{ color: TOKENS.color.warm }}>
+                    {entry.articleLabel || entry.label}
+                  </div>
+                  <Badge
+                    className="rounded-full border-0 shadow-none"
+                    style={{
+                      background: entry.status === "published" ? "rgba(201,94,42,0.12)" : "rgba(24,18,14,0.08)",
+                      color: entry.status === "published" ? TOKENS.color.warm : TOKENS.color.inkSoft,
+                    }}
+                  >
+                    {entry.status === "published" ? "Actual" : "Archivo"}
+                  </Badge>
+                </div>
+                <h3 className="mt-3 text-2xl font-black tracking-tight" style={{ fontFamily: TOKENS.font.display, color: TOKENS.color.ink }}>
+                  {entry.title}
+                </h3>
+                <p className="mt-3 text-sm leading-7" style={{ color: TOKENS.color.inkSoft }}>
+                  {entry.summary}
+                </p>
+                <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-sm">
+                  <span style={{ color: TOKENS.color.inkSoft }}>
+                    {entry.location} · {formatEditionDate(entry.publishedAt)}
+                  </span>
+                  <span className="inline-flex items-center gap-2 font-semibold" style={{ color: TOKENS.color.warm }}>
+                    {isCurrent ? "Abrir edición actual" : "Abrir edición"}
+                    <ChevronRight className="h-4 w-4" />
+                  </span>
+                </div>
+              </a>
+            );
+          })}
+        </div>
+      </div>
+    </section>
+  );
+
   return (
     <div className="min-h-screen" style={shellStyle()}>
       <style>{`
@@ -1099,13 +1161,13 @@ export default function MicrositioAcosoVecinal2026() {
         <div className="mx-auto max-w-[1440px] px-4 pt-8 md:px-6 md:pt-12">
           <div className="grid gap-3 border-y py-3 md:grid-cols-3" style={{ borderColor: TOKENS.color.line }}>
             <div className="text-[11px] uppercase tracking-[0.32em]" style={{ color: TOKENS.color.inkSoft }}>
-              {issueContent.metadata.location} · {issueContent.metadata.editionLabel}
+              {isArchiveLanding ? "Gaceta Tu Espacio · Archivo" : `${issueContent.metadata.location} · ${issueContent.metadata.editionLabel}`}
             </div>
             <div className="text-center text-[11px] uppercase tracking-[0.34em]" style={{ color: TOKENS.color.warm }}>
-              {issueContent.metadata.articleLabel}
+              {isArchiveLanding ? "Archivo editorial verificable" : issueContent.metadata.articleLabel}
             </div>
             <div className="text-left text-[11px] uppercase tracking-[0.32em] md:text-right" style={{ color: TOKENS.color.inkSoft }}>
-              {issueContent.metadata.publishedDisplay}
+              {isArchiveLanding ? "Ediciones vivas y archivo estable" : issueContent.metadata.publishedDisplay}
             </div>
           </div>
 
@@ -1113,47 +1175,82 @@ export default function MicrositioAcosoVecinal2026() {
             <div className="space-y-2">
               <div className="text-[11px] uppercase tracking-[0.28em]" style={{ color: TOKENS.color.warm }}>Fechado</div>
               <p className="text-sm leading-7" style={{ color: TOKENS.color.inkSoft, fontFamily: TOKENS.font.editorial }}>
-                {issueContent.metadata.location} · {issueContent.metadata.publishedDisplay}
+                {isArchiveLanding ? "Ruta pública del historial editorial" : `${issueContent.metadata.location} · ${issueContent.metadata.publishedDisplay}`}
               </p>
             </div>
 
             <div className="text-center">
               <div className="text-[13px] uppercase tracking-[0.45em]" style={{ color: TOKENS.color.warm, fontFamily: TOKENS.font.body }}>
-                {issueContent.metadata.editionLabel}
+                {isArchiveLanding ? "Archivo editorial" : issueContent.metadata.editionLabel}
               </div>
               <div className="mt-2 text-[clamp(2.4rem,5.6vw,5.2rem)] font-black leading-none tracking-tight" style={{ fontFamily: TOKENS.font.display }}>
                 <span style={{ color: TOKENS.color.ink }}>{mergedBrandConfig.siteName} </span>
                 <span style={{ color: TOKENS.color.warm }}>Eje Central</span>
               </div>
               <div className="mt-2 text-[13px] uppercase tracking-[0.28em]" style={{ color: TOKENS.color.inkSoft }}>
-                {issueContent.metadata.coverThemeLine}
+                {isArchiveLanding ? "Ediciones publicadas con enlace estable y miniatura correcta" : issueContent.metadata.coverThemeLine}
               </div>
             </div>
 
             <div className="space-y-2 md:text-right">
               <div className="text-[11px] uppercase tracking-[0.28em]" style={{ color: TOKENS.color.warm }}>
-                {issueContent.metadata.topicLabel}
+                {isArchiveLanding ? "Estado" : issueContent.metadata.topicLabel}
               </div>
               <p className="text-sm leading-7" style={{ color: TOKENS.color.inkSoft, fontFamily: TOKENS.font.editorial }}>
-                {issueContent.metadata.topicValue}
+                {isArchiveLanding ? "Una edición vigente, histórico verificable y URLs permanentes." : issueContent.metadata.topicValue}
               </p>
             </div>
           </div>
         </div>
 
-        <div className="mx-auto mt-4 max-w-[1440px] px-4 pb-6 md:px-6">
-          <SharePanel
-            surface="header"
-            sharePayload={sharePayload}
-            summaryText={issueContent.share.summary}
-            compact
-            className="rounded-[20px] border bg-white/84 p-4 shadow-sm"
-            onAction={trackShareAction}
-          />
-        </div>
+        {isArchiveLanding ? null : (
+          <div className="mx-auto mt-4 max-w-[1440px] px-4 pb-6 md:px-6">
+            <SharePanel
+              surface="header"
+              sharePayload={sharePayload}
+              summaryText={issueContent.share.summary}
+              compact
+              className="rounded-[20px] border bg-white/84 p-4 shadow-sm"
+              onAction={trackShareAction}
+            />
+          </div>
+        )}
       </header>
 
       <main className="print-document">
+        {isArchiveLanding ? (
+          <>
+            <section id="portada" style={{ ...paperStyle(false), ...TOKENS.sectionPad }}>
+              <div className="mx-auto max-w-[1440px] px-4 md:px-6">
+                <div className="rounded-[28px] border bg-white/84 p-6 md:p-10" style={{ borderColor: TOKENS.color.line, boxShadow: TOKENS.shadow.soft }}>
+                  <Eyebrow>Archivo editorial</Eyebrow>
+                  <h1 className="mt-4 max-w-4xl text-[clamp(2.4rem,5vw,4.5rem)] font-black tracking-tight" style={{ fontFamily: TOKENS.font.display, color: TOKENS.color.ink }}>
+                    Una edición vigente. Un historial estable. URLs compartibles.
+                  </h1>
+                  <p className="mt-5 max-w-3xl text-lg leading-8 md:text-xl" style={{ color: TOKENS.color.inkSoft, fontFamily: TOKENS.font.editorial }}>
+                    Esta vista concentra las notas publicadas, conserva la edición vigente al frente y mantiene vivas las anteriores con su propio enlace y miniatura social.
+                  </p>
+                  <div className="mt-6 grid gap-3 md:grid-cols-3">
+                    <div className="rounded-[18px] border bg-[#fffaf3] p-4" style={{ borderColor: TOKENS.color.line }}>
+                      <div className="text-[11px] uppercase tracking-[0.24em]" style={{ color: TOKENS.color.warm }}>Actual</div>
+                      <p className="mt-2 text-sm leading-7" style={{ color: TOKENS.color.inkSoft }}>La edición publicada abre en la portada principal.</p>
+                    </div>
+                    <div className="rounded-[18px] border bg-[#fffaf3] p-4" style={{ borderColor: TOKENS.color.line }}>
+                      <div className="text-[11px] uppercase tracking-[0.24em]" style={{ color: TOKENS.color.warm }}>Archivo</div>
+                      <p className="mt-2 text-sm leading-7" style={{ color: TOKENS.color.inkSoft }}>Cada edición anterior conserva slug propio y puede compartirse sin romper el histórico.</p>
+                    </div>
+                    <div className="rounded-[18px] border bg-[#fffaf3] p-4" style={{ borderColor: TOKENS.color.line }}>
+                      <div className="text-[11px] uppercase tracking-[0.24em]" style={{ color: TOKENS.color.warm }}>Verificable</div>
+                      <p className="mt-2 text-sm leading-7" style={{ color: TOKENS.color.inkSoft }}>Las miniaturas sociales y metadatos se resuelven desde servidor para cada ruta pública.</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+            {archiveSection}
+          </>
+        ) : (
+        <>
         <section id="portada" style={{ ...paperStyle(false), ...TOKENS.sectionPad }}>
           <div className="mx-auto max-w-[1440px] px-4 md:px-6">
             <div className="grid gap-8 xl:grid-cols-[1.12fr_0.88fr]">
@@ -2196,63 +2293,9 @@ export default function MicrositioAcosoVecinal2026() {
           </div>
         </section>
 
-        <section id="archivo" className="border-t" style={{ borderColor: TOKENS.color.line, ...paperStyle(false), ...TOKENS.sectionPad }}>
-          <div className="mx-auto max-w-[1440px] px-4 md:px-6">
-            <div className="mb-8">
-              <Eyebrow>Archivo editorial</Eyebrow>
-              <h2 className="mt-4 text-[clamp(2rem,4vw,3.5rem)] font-black tracking-tight" style={{ fontFamily: TOKENS.font.display, color: TOKENS.color.ink }}>
-                Ediciones publicadas y notas anteriores
-              </h2>
-              <p className="mt-4 max-w-3xl text-lg leading-8" style={{ color: TOKENS.color.inkSoft, fontFamily: TOKENS.font.editorial }}>
-                Cuando se publique una nueva edición, la vigente pasa al archivo con su propio enlace. Así la edición 2 puede salir sin perder la 1.
-              </p>
-            </div>
-
-            <div className="grid gap-4 lg:grid-cols-2">
-              {issueArchive.map((entry) => {
-                const isCurrent = entry.status === "published";
-                return (
-                  <a
-                    key={entry.id}
-                    href={buildEditionHistoryHref(entry.slug, isCurrent)}
-                    className="rounded-[24px] border p-5 transition hover:-translate-y-0.5 hover:bg-white"
-                    style={{ borderColor: TOKENS.color.line, background: "rgba(255,255,255,0.84)", boxShadow: TOKENS.shadow.soft }}
-                  >
-                    <div className="flex flex-wrap items-center justify-between gap-3">
-                      <div className="text-[11px] uppercase tracking-[0.24em]" style={{ color: TOKENS.color.warm }}>
-                        {entry.articleLabel || entry.label}
-                      </div>
-                      <Badge
-                        className="rounded-full border-0 shadow-none"
-                        style={{
-                          background: entry.status === "published" ? "rgba(201,94,42,0.12)" : "rgba(24,18,14,0.08)",
-                          color: entry.status === "published" ? TOKENS.color.warm : TOKENS.color.inkSoft,
-                        }}
-                      >
-                        {entry.status === "published" ? "Actual" : "Archivo"}
-                      </Badge>
-                    </div>
-                    <h3 className="mt-3 text-2xl font-black tracking-tight" style={{ fontFamily: TOKENS.font.display, color: TOKENS.color.ink }}>
-                      {entry.title}
-                    </h3>
-                    <p className="mt-3 text-sm leading-7" style={{ color: TOKENS.color.inkSoft }}>
-                      {entry.summary}
-                    </p>
-                    <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-sm">
-                      <span style={{ color: TOKENS.color.inkSoft }}>
-                        {entry.location} · {formatEditionDate(entry.publishedAt)}
-                      </span>
-                      <span className="inline-flex items-center gap-2 font-semibold" style={{ color: TOKENS.color.warm }}>
-                        {isCurrent ? "Abrir edición actual" : "Abrir edición"}
-                        <ChevronRight className="h-4 w-4" />
-                      </span>
-                    </div>
-                  </a>
-                );
-              })}
-            </div>
-          </div>
-        </section>
+        {archiveSection}
+        </>
+        )}
       </main>
 
       <footer className="border-t" style={{ borderColor: TOKENS.color.line, background: TOKENS.color.paperAlt }}>

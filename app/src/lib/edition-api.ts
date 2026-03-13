@@ -3,7 +3,7 @@ import {
   fallbackBrandConfig,
   type BrandConfig,
   type EditionPayload,
-} from "@/lib/issue-content";
+} from "./issue-content.ts";
 
 type CurrentEditionResponse = {
   item?: unknown;
